@@ -6,7 +6,7 @@ Codex は作業前にこのファイルを読むため、ここには repo 共�
 
 ## プロジェクト概要
 
-`speak-kit` は、英会話コミュニティの知人へ GitHub 経由で渡す個人の英会話練習アプリ。各自が自分の GitHub・Vercel・Supabase で立てる。Claude API は任意で、キーが無くてもコア（フレーズ読み上げ、録音比較、学習記録・お気に入り）は最後まで通る。
+`speak-kit` は、英会話コミュニティの知人へ GitHub 経由で渡す個人の英会話練習アプリ。各自が自分の GitHub・Vercel・Supabase で、利用者一人のプライベートアプリを立てる。一人に閉じる理由は AI キーの悪用防止である。Claude API は任意で、キーが無くてもコア（テキストのフレーズ練習、学習記録・お気に入り）は最後まで通る。音声入出力は作らない。
 
 意図の台帳は `docs/英会話アプリ-コミュニティ配布を先に作り次段階へコピーする.md`（2026-10-13、cold / アイディア）。確定した範囲は `docs/01_requirements.md` から `docs/08_release_runbook.md` にある。概要は `README.md`。同じ主題の別アイディアノートは作らない。未決は実装で埋めない。先にローカルで Golden Path を通す。クラウド（Vercel、①用 Supabase、配布用 GitHub）は別ステップである。
 
@@ -14,7 +14,7 @@ Codex は作業前にこのファイルを読むため、ここには repo 共�
 - 配布: 各自のアカウント。黒澤名義の課金・鍵・DB に相手の利用量を載せない。単一ホスト型は不採用
 - 次段階: `speak-kit` ができてから、このリポジトリをコピーして `speak-next` を切る。今は切らない。コピー後の変更は `speak-kit` へ戻さない
 - live: 毎日の学習は private-ops 内 `skill-trainer` に残す。障害修正以外、エンジン・マイグレーション・Retool publish を live に出さない。live の学習者データベースへ書かない
-- 実装基盤にしないもの: 本番の適応訓練エンジン、Retool、ローカル Postgres。private-ops の個人運用ルールをこの公開配布アプリへそのまま適用しない
+- 参照元: `/Users/kurosawa/Dev/private-ops/apps/skill-trainer`。挙動・SQL・ドメイン文言は限りなくコピーする。Rust API は Next.js API Routes へ書き直す。crate、Retool、ローカル Postgres、`DB_FLOW_URL` は実行基盤にしない
 - 作業順の外: 談話訓練、新しい Phase 番号、Phase 1 Gate の変更、Skill / Exercise の登録
 
 アプリ本体は未着手。`make` の各ターゲットは足場で、中身は未記入。

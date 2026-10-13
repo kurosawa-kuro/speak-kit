@@ -21,9 +21,9 @@
 
 `speak-kit` は英会話コミュニティへ配るアプリ。概要・確定スタック・配布型は `README.md`。同じ主題の別アイディアノートは作らない。
 
-作業してよいのは、owner がこのセッションで指示した範囲だけである。確定した範囲は `docs/01_requirements.md` から `docs/08_release_runbook.md` にある。アイディアノートの未決（フレーズ素材、公開範囲、音声実装、会話ログ、テンプレート化、`speak-next` の完成ラインと吸収）を実装で埋めない。先にローカルで Golden Path を通す。Vercel、①用 Supabase、配布用 GitHub は別ステップである。`speak-next` は、`speak-kit` ができてからこのリポジトリをコピーして切る。今は切らない。コピー後の変更を `speak-kit` へ戻さない。
+作業してよいのは、owner がこのセッションで指示した範囲だけである。確定した範囲は `docs/01_requirements.md` から `docs/08_release_runbook.md` にある。アイディアノートの未決（フレーズ素材、会話ログ、テンプレート化、`speak-next` の完成ラインと吸収）を実装で埋めない。音声入出力は作らない。各インスタンスは利用者一人のプライベートアプリであり、目的は AI キーの悪用防止である。先にローカルで Golden Path を通す。Vercel、①用 Supabase、配布用 GitHub は別ステップである。`speak-next` は、`speak-kit` ができてからこのリポジトリをコピーして切る。今は切らない。コピー後の変更を `speak-kit` へ戻さない。
 
-live の毎日の学習は private-ops 内 `skill-trainer` に残す。障害修正以外、エンジン、マイグレーション、Retool publish を live に出さない。live の学習者データベースへ書かない。本番の適応訓練エンジン、Retool、ローカル Postgres をこのアプリの実装基盤にしない。private-ops の個人運用ルールをこの公開配布アプリへそのまま適用しない。
+実装の参照元は `/Users/kurosawa/Dev/private-ops/apps/skill-trainer`。挙動、`sql/postgres/`、`src/domains/` の文言は限りなくコピーする。Rust API（`src/*.rs`）はフル Next.js では crate のまま載せず、同じ挙動を Next.js API Routes へ書き直す。live の毎日の学習は private-ops 内 `skill-trainer` に残す。障害修正以外、エンジン、マイグレーション、Retool publish を live に出さない。live の学習者データベースと `DB_FLOW_URL` へ書かない。private-ops の個人運用ルールをこの公開配布アプリへそのまま適用しない。
 
 談話訓練、新しい Phase 番号、Phase 1 Gate の変更、Skill / Exercise の登録は、このリポジトリの作業順に載せない。
 
@@ -45,7 +45,7 @@ make lint     # 静的解析
 
 - フロントは Next.js（React）。バックエンドは Next.js API Routes。デプロイは Vercel。認証と DB は Supabase（Auth + Postgres）。
 - LLM は Claude API で任意。呼び出しはサーバー側 proxy のみ。クライアントに API キーを渡さない。
-- コア（フレーズ読み上げ、録音比較、学習記録・お気に入り）は Anthropic キー無しで最後まで通る。AI 機能は別エンドポイントに隔離し、コアの route は AI クライアントを import しない。
+- コア（テキストのフレーズ練習、学習記録・お気に入り）は Anthropic キー無しで最後まで通る。読み上げ、録音、STT、TTS は作らない。AI 機能は別エンドポイントに隔離し、コアの route は AI クライアントを import しない。
 - キー有無は 1 箇所（例: `lib/ai/isEnabled.ts`）で算出し、サーバーは `aiEnabled: boolean` だけを返す。401 / 429 / 5xx / timeout は該当 AI 呼び出しだけの失敗にする。
 - 各自が自分の GitHub・Vercel・Supabase・任意の Anthropic キーでデプロイする。黒澤名義の課金・鍵・DB に相手の利用量を載せない。
 - ハーネスの非機密設定は `env/config.yaml`、ローカル秘密情報は `env/secret.yaml`、チーム共有は Doppler (`doppler.yaml`)。配布先の実行時秘密は各自の Vercel / Supabase に置く。
@@ -59,7 +59,7 @@ make lint     # 静的解析
 - 仕様変更は連動する `docs/` とテストを同一 PR で直す。drift を作らない。
 - 既存の関数・ユーティリティ・パターンを優先的に再利用する。
 - task note を仕様の正本にしない。確定内容は `docs/specs/`、`docs/adr/`、`docs/runbooks/` に昇格する。アイディアノートを実装指示にしない。
-- コア機能を先に通す。`ANTHROPIC_API_KEY` を unset にした状態で、フレーズ読み上げ・録音比較・学習記録が完了することを確認してから AI 機能を足す。
+- コア機能を先に通す。`ANTHROPIC_API_KEY` を unset にした状態で、テキストのフレーズ練習と学習記録が完了することを確認してから AI 機能を足す。
 - AI 無効時の UI は disabled と案内文にする。AI セクションは Error Boundary で囲む。
 - **Scope invariant（常時）**: 作業中に Goal/Scope 外の変更・前提崩れ・追加副作用・docs と実装の矛盾を見つけたら即実装しない。`control-change` で分類するか follow-up task に残す。「ついで修正/共通化/改名」は scope creep。
 
