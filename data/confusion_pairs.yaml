@@ -11,7 +11,6 @@
     skill_key: CAUSE_THATS_WHY
     key: 結果を後ろに出す
     direction: 理由のあと
-  source: observed_mistake
   probes:
     - id: 11111111-1111-4111-8111-000000000001
       side: a
@@ -1638,59 +1637,3 @@
         near:
           - The picture was funny.
           - The picture is a funny.
-- id: 6775447e-8d66-4453-b46a-f510a4ba9bd9
-  type: MEANING
-  a:
-    label: have a problem
-    key: have(状態・所有)
-    direction: 問題を抱えている状態を表す
-  b:
-    label: take a problem
-    key: take(引き受け・取り組み対象)
-    direction: 問題を取り上げて対処する行為を表す
-  source: learner_registered
-  probes:
-    - id: ca1d8ce2-dbd8-4a0b-abff-b5da74b62d41
-      side: a
-      prompt: 彼は毎朝ひどい頭痛に悩まされている。この状態を一文で表すと?
-      answer: He has a problem with headaches every morning.
-    - id: 441d9640-3b4f-4359-b8df-87f2eedc3d31
-      side: a
-      prompt: 新しい部署で同僚とうまくいかず困っている社員の状況を一文で表すと?
-      answer: She has a problem with her new team.
-    - id: c729f01c-3d04-46d3-a865-4d1e8156a50f
-      side: b
-      prompt: 上司が部下にこの課題を担当するよう指示する場面を一文で表すと?
-      answer: Take this problem and solve it by Friday.
-    - id: 11b782d5-8c8a-4eb9-a57e-44075d612312
-      side: b
-      prompt: 数学の授業で先生が生徒に教科書から問題を一つ選んで解かせる指示を一文で表すと?
-      answer: Take a problem from page 10 and solve it.
-- id: 83d4c8a8-6b19-4b9e-bcac-4c3cd8eae2c7
-  type: MEANING
-  a:
-    label: borrow a book
-    key: receive
-    direction: 相手から自分へ
-  b:
-    label: lend a book
-    key: provide
-    direction: 自分から相手へ
-  source: learner_registered
-  probes:
-    - id: 0f59343f-fd5a-4432-b159-c79c2e2813e4
-      side: a
-      prompt: 図書館で本を借りたいとき、何と言う?
-      answer: borrow a book
-    - id: 16718f14-6f5c-4936-9c55-2ce0b83a0315
-      side: a
-      prompt: 先生から教科書を一時的に受け取る行為を表す語句は?
-      answer: borrow a book
-    - id: 03f4fd0d-bdac-418f-aa3d-532bb578c3dc
-      side: b
-      prompt: 友達が本を忘れたので、自分の本を貸すとき何と言う?
-      answer: lend a book
-    - id: d788fcbc-3342-41ae-8b1d-d3341ef7d478
-      side: b
-      prompt: 自分の本棚から本を人に渡して使わせる行為を表す語句は?
-      answer: lend a book

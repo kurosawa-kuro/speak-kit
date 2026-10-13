@@ -182,7 +182,7 @@ function validate(expressions, pairs, errors) {
     else if (value.id && pairIds.has(value.id)) fail(`id が重複しています（${pairIds.get(value.id)} にもあります）`)
     else if (value.id) pairIds.set(value.id, at)
     if (!PAIR_TYPES.includes(value.type)) fail(`type は ${PAIR_TYPES.join("、")} のどれかにしてください`)
-    if (value.source !== undefined && !["catalog", "observed_mistake", "learner_registered"].includes(value.source)) fail("source の値が違います")
+    if (value.source !== undefined && !["catalog", "learner_registered"].includes(value.source)) fail("source の値が違います")
     for (const sideName of ["a", "b"]) {
       const side = value[sideName]
       if (!side || !isText(side.label)) {

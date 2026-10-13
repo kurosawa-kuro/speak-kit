@@ -58,36 +58,40 @@ async function discriminationDraft(labelA, labelB) {
   return parseDraft(asked.data.text)
 }
 
+function resetState(client, pairId) {
+  return client.query(
+    `INSERT INTO skill_trainer.learner_confusion_state AS st (learner_key, pair_id, pending_sides, next_due_at)
+     VALUES ('default', $1, '["a","b"]'::jsonb, NOW())
+     ON CONFLICT (learner_key, pair_id) DO UPDATE
+       SET pending_sides = '["a","b"]'::jsonb, next_due_at = NOW(), serving_probe_id = NULL, updated_at = NOW()`,
+    [pairId],
+  )
+}
+
 export async function registerPair(request) {
   const rawA = request.label_a.trim()
   const rawB = request.label_b.trim()
+  const keepOrder = rawA.toLowerCase() < rawB.toLowerCase()
+  const labelA = keepOrder ? rawA : rawB
+  const labelB = keepOrder ? rawB : rawA
+  const existing = await query(
+    "SELECT pair_id FROM skill_trainer.confusion_pairs WHERE label_a = $1 AND label_b = $2",
+    [labelA, labelB],
+  )
+  if (existing.rows[0]) {
+    // 教材としてすでにあるペアは書き換えず、学習の状態だけを最初からにする。
+    const pairId = existing.rows[0].pair_id
+    await withTransaction((client) => resetState(client, pairId))
+    return envelope(true, "ok", await pairNotice(pairId), null)
+  }
   const { draft, error } = await discriminationDraft(rawA, rawB)
   if (!draft) {
     return envelope(false, "confusion_key_unavailable", {}, { message: `違いを作れませんでした: ${error}` })
   }
-  const keepOrder = rawA.toLowerCase() < rawB.toLowerCase()
-  const labelA = keepOrder ? rawA : rawB
-  const labelB = keepOrder ? rawB : rawA
   const keyA = keepOrder ? draft.key_a : draft.key_b
   const directionA = keepOrder ? draft.direction_a : draft.direction_b
   const keyB = keepOrder ? draft.key_b : draft.key_a
   const directionB = keepOrder ? draft.direction_b : draft.direction_a
-  await query(
-    `INSERT INTO skill_trainer.confusion_pairs
-       (pair_id, label_a, label_b, key_a, direction_a, key_b, direction_b, source, pending_sides, next_due_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, 'learner_registered', '["a","b"]'::jsonb, NOW())
-     ON CONFLICT (learner_key, label_a, label_b) DO UPDATE
-       SET key_a = EXCLUDED.key_a, direction_a = EXCLUDED.direction_a,
-           key_b = EXCLUDED.key_b, direction_b = EXCLUDED.direction_b,
-           pending_sides = '["a","b"]'::jsonb, next_due_at = NOW(), serving_probe_id = NULL`,
-    [randomUUID(), labelA, labelB, keyA, directionA, keyB, directionB],
-  )
-  const stored = await query(
-    `SELECT pair_id FROM skill_trainer.confusion_pairs
-     WHERE learner_key = 'default' AND label_a = $1 AND label_b = $2`,
-    [labelA, labelB],
-  )
-  const pairId = stored.rows[0].pair_id
   const probes = labelA === rawB
     ? [
       ["a", 1, draft.probe_b1_prompt, draft.probe_b1_expected],
@@ -101,16 +105,32 @@ export async function registerPair(request) {
       ["a", 2, draft.probe_a2_prompt, draft.probe_a2_expected],
       ["b", 2, draft.probe_b2_prompt, draft.probe_b2_expected],
     ]
-  for (const [side, ordinal, prompt, expected] of probes) {
-    await query(
-      `INSERT INTO skill_trainer.confusion_probes
-         (probe_id, pair_id, side, ordinal, prompt, expected_text)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT (pair_id, side, ordinal) DO UPDATE
-         SET prompt = EXCLUDED.prompt, expected_text = EXCLUDED.expected_text, last_served_at = NULL`,
-      [randomUUID(), pairId, side, ordinal, prompt, expected],
+  const pairId = await withTransaction(async (client) => {
+    const inserted = await client.query(
+      `INSERT INTO skill_trainer.confusion_pairs
+         (pair_id, label_a, label_b, key_a, direction_a, key_b, direction_b, source)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'learner_registered')
+       ON CONFLICT (label_a, label_b) DO NOTHING
+       RETURNING pair_id`,
+      [randomUUID(), labelA, labelB, keyA, directionA, keyB, directionB],
     )
-  }
+    if (inserted.rows[0]) {
+      for (const [side, ordinal, prompt, expected] of probes) {
+        await client.query(
+          `INSERT INTO skill_trainer.confusion_probes
+             (probe_id, pair_id, side, ordinal, prompt, expected_text)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [randomUUID(), inserted.rows[0].pair_id, side, ordinal, prompt, expected],
+        )
+      }
+    }
+    const stored = inserted.rows[0] || (await client.query(
+      "SELECT pair_id FROM skill_trainer.confusion_pairs WHERE label_a = $1 AND label_b = $2",
+      [labelA, labelB],
+    )).rows[0]
+    await resetState(client, stored.pair_id)
+    return stored.pair_id
+  })
   return envelope(true, "ok", await pairNotice(pairId), null)
 }
 
@@ -186,15 +206,19 @@ export async function submitProbe(request) {
     nextSides = [probe.side.trim(), other]
   }
   await query(
-    `UPDATE skill_trainer.confusion_pairs
-     SET graded_count = graded_count + 1,
-         success_count = success_count + $2,
-         confusion_count = confusion_count + $3,
-         success_streak = $4,
-         pending_sides = $5::jsonb,
-         serving_probe_id = NULL,
-         next_due_at = CASE WHEN $6::int IS NULL THEN NOW() ELSE NOW() + make_interval(days => $6) END
-     WHERE pair_id = $1`,
+    `INSERT INTO skill_trainer.learner_confusion_state AS st
+       (learner_key, pair_id, graded_count, success_count, confusion_count, success_streak, pending_sides, next_due_at)
+     VALUES ('default', $1, 1, $2, $3, $4, $5::jsonb,
+             CASE WHEN $6::int IS NULL THEN NOW() ELSE NOW() + make_interval(days => $6) END)
+     ON CONFLICT (learner_key, pair_id) DO UPDATE
+       SET graded_count = st.graded_count + 1,
+           success_count = st.success_count + EXCLUDED.success_count,
+           confusion_count = st.confusion_count + EXCLUDED.confusion_count,
+           success_streak = EXCLUDED.success_streak,
+           pending_sides = EXCLUDED.pending_sides,
+           serving_probe_id = NULL,
+           next_due_at = EXCLUDED.next_due_at,
+           updated_at = NOW()`,
     [probe.pair_id, success ? 1 : 0, success ? 0 : 1, streak, JSON.stringify(nextSides), days],
   )
   return probeEnvelope(request.submission_id, probe, actual, success, await pairNotice(probe.pair_id))

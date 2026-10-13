@@ -22,14 +22,14 @@ function databaseName() {
   return `${parsed.hostname}:${parsed.port || 5432}${parsed.pathname}`
 }
 
-async function sync(apply, catalogOnly) {
+async function sync(apply) {
   const content = check()
   if (!content) return 1
   const { pool, withTransaction } = await import("../lib/db.mjs")
   const { planSync, applySync } = await import("../lib/content/sync.mjs")
   const { learningCounts } = await import("../lib/content/state.mjs")
   try {
-    const plan = await planSync(pool, content, { catalogOnly })
+    const plan = await planSync(pool, content)
     console.log(`反映先: ${databaseName()}`)
     const counts = { 追加: 0, 変更: 0, 停止: 0 }
     for (const change of plan.changes) {
@@ -87,9 +87,9 @@ async function main() {
     console.log(`書き間違いはありません（表現 ${content.expressions.length} 件、混同ペア ${content.pairs.length} 件）`)
     return 0
   }
-  if (command === "sync") return sync(args.includes("--apply"), args.includes("--catalog-only"))
+  if (command === "sync") return sync(args.includes("--apply"))
   if (command === "export") return exportData()
-  console.error("使い方: node src/cli/data.mjs check | sync [--apply] [--catalog-only] | export")
+  console.error("使い方: node src/cli/data.mjs check | sync [--apply] | export")
   return 1
 }
 

@@ -576,3 +576,47 @@ migration の作り直し:
 - `NEXT_DIST_DIR=.next-build npx next build`: 成功。開発サーバー（3000）は動いたまま 200 を返した。
 - 開発サーバーで `get_today_plan_v2`・`quiz_next_v1`・`get_progress_v2` が `ok`。
 
+
+### 第 2 段（2026-10-13 19 時台）
+
+やったこと:
+
+- 新しい baseline `sql/migrations/20261013200000_baseline.sql` を 1 本作った。元の 29 本は `sql/archive/` に移した（中身は変えていない）。
+  - 消したもの: `attempt_responses`（表・トリガー・関数）、ビュー `evaluations`、`learning_policy`。
+  - `confusion_pairs` は教材の欄だけにした（`learner_key` と学習の状態の欄を外し、二つのラベルで一意。`skill_key_a/b` は FK）。
+  - 学習の状態は新しい `learner_confusion_state`（学習者×ペア）と `learner_probe_state`（学習者×確認問題の最後に出した時刻）へ移した。読むときはビュー `learner_confusion_pairs` で教材と状態を合わせる。学習者の表は作らない（O6）ので、このビューは今は `default` の学習者だけを出す。
+  - `training_attempts`・`grading_observations`・`capability_evidence`・`conversation_sessions` に `learner_key NOT NULL DEFAULT 'default'` を足した。
+  - 能力の一覧 `capabilities`（9 件）を足し、能力の列 7 か所から FK で指す。
+  - よく通る経路の索引を 14 本足した。
+  - `ai_usage` を足した（第 3 段の利用上限で使う）。
+  - 採点契約を、採点の版ごとの `rubric:<版>` 9 行と、`quiz-choice`・`confusion-probe` の計 11 行にまとめた（元は 327 行）。YAML の同期と候補の承認は `rubric:<版>` を指す。
+  - `learning_policy_versions` と `learner_phase_gate_policies` の `effective_at` を固定の日時にした（v1 と v2 が同じ時刻にならない）。
+  - role `job_control_api` と `public.flow_schema_migrations` への依存はなくなった。
+- 適用スクリプトを `scripts/db-apply.sh <DB 名>` の 1 本にした。当てたファイルの名前とチェックサムを `public.schema_migrations` に残し、当て済みのファイルが書き換わっていたら止まる。`apply-local-schema.sh` と `reset-test-db.sh` はこれを呼ぶだけ。
+- コード: 混同ペアの状態の読み書きを新しい表へ移した（`boundary.mjs`・`confusion.mjs`・`quiz.mjs`・`content/state.mjs`）。誤答で `source` を書き換える処理はなくした。
+- 画面からの混同ペアの登録で、すでに教材にあるペアなら AI を呼ばず、教材と確認問題を書き換えず、学習の状態だけを最初からにする。
+- YAML（O1）: 画面から登録された 2 件を消し、because / that's why の `source: observed_mistake` を外した。`source` に書けるのは `catalog` と `learner_registered` だけにした。
+- `--catalog-only` は要らなくなったので消した。画面から登録したペアを書き出した YAML も、空の DB に入れられる。
+- `speak_kit` を入れ替えた（O5）。
+  - 元の DB は `~/backups/speak-kit/speak_kit_20261013192250.dump` に保存した。
+  - 元の DB は `speak_kit_old_20261013192250` の名前で残してある。
+  - AI の設定（オン）は同じ値。
+
+確かめたこと:
+
+- `npm test`: 32 件中 32 件が通った。新しいテストは 2 件。
+  - 確認問題の回答は状態だけを変え、教材の行は変えない。
+  - 教材にあるペアの登録では AI を呼ばない。
+- 空の DB に手作業なしで乗った（`speak_kit_next` に baseline 1 本 → YAML 同期で 793 件の追加）。もう一度流すと、適用 0 件、同期の差分 0 件。
+- 新しい `speak_kit` の件数:
+  - 表現 51、練習問題 325、クイズ 257、混同ペア 32、確認問題 128、採点契約 11。
+  - 学習の記録はすべて 0。
+- 開発サーバー（3000）は入れ替えのあともそのまま動いた。`get_today_plan_v2`・`get_progress_v2`・`quiz_next_v1`・`evaluate_phase_gate_v2` が `ok`。記録の画面は「32 対を監視」「安定 0 / 257 問」を出した。
+- `NEXT_DIST_DIR=.next-build npx next build`: 成功。
+
+見送ったもの（この段ではやらない。理由は、記録を捨てたので後から足しても移行が要らないため）:
+
+- `quiz_attempts` を `training_attempt_id` を主キーにした詳細だけの表にすること。
+- `confusion_events` を「確認問題の結果」と「誤答から見つけた混同」に分けること。
+- 会話の判定を、JSON ではなくターンの列を正にすること。
+- 確認問題の文を変えるときの版の扱い（今は YAML 同期が書き換えを止めている）。

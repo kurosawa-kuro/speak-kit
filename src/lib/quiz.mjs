@@ -52,8 +52,8 @@ function stateCte() {
            )) AS gated,
            CASE
              WHEN qi.pair_id IS NOT NULL AND EXISTS (
-               SELECT 1 FROM skill_trainer.confusion_pairs cp
-               WHERE cp.pair_id = qi.pair_id AND cp.confusion_count > 0
+               SELECT 1 FROM skill_trainer.learner_confusion_state cs
+               WHERE cs.learner_key = 'default' AND cs.pair_id = qi.pair_id AND cs.confusion_count > 0
              ) THEN 0
              WHEN qi.skill_id IS NOT NULL AND NOT EXISTS (
                SELECT 1 FROM skill_trainer.effective_capability_evidence e
@@ -380,9 +380,11 @@ async function promoteIfReady(item, answeredAt) {
     )
     if (item.pair_id) {
       await client.query(
-        `UPDATE skill_trainer.confusion_pairs
-         SET pending_sides = '["a","b"]'::jsonb, serving_probe_id = NULL, next_due_at = NOW()
-         WHERE pair_id = $1 AND (next_due_at IS NULL OR next_due_at > NOW())`,
+        `INSERT INTO skill_trainer.learner_confusion_state AS st (learner_key, pair_id, pending_sides, next_due_at)
+         VALUES ('default', $1, '["a","b"]'::jsonb, NOW())
+         ON CONFLICT (learner_key, pair_id) DO UPDATE
+           SET pending_sides = '["a","b"]'::jsonb, serving_probe_id = NULL, next_due_at = NOW(), updated_at = NOW()
+           WHERE st.next_due_at IS NULL OR st.next_due_at > NOW()`,
         [item.pair_id],
       )
     }
@@ -394,8 +396,8 @@ export async function quizRoute() {
   const counts = await query(
     `${stateCte()} SELECT
        (SELECT count(DISTINCT s.pair_id)::bigint FROM item_state s
-        JOIN skill_trainer.confusion_pairs cp ON cp.pair_id = s.pair_id
-        WHERE cp.confusion_count > 0 AND NOT s.stable) AS confused,
+        JOIN skill_trainer.learner_confusion_state cs ON cs.pair_id = s.pair_id AND cs.learner_key = 'default'
+        WHERE cs.confusion_count > 0 AND NOT s.stable) AS confused,
        (SELECT count(DISTINCT s.skill_id)::bigint FROM item_state s
         WHERE s.route_rank = 1 AND NOT s.stable) AS unmeasured`,
   )
@@ -461,10 +463,10 @@ export async function quizProgress() {
             cp.success_count, cp.graded_count,
             percentile_cont(0.5) WITHIN GROUP (ORDER BY qa.latency_ms) AS choice_p50,
             (SELECT count(*) FROM item_state s WHERE s.pair_id = cp.pair_id AND s.stable)::int AS stable_items
-     FROM skill_trainer.confusion_pairs cp
-     JOIN skill_trainer.quiz_attempts qa ON qa.pair_id = cp.pair_id AND qa.learner_key = 'default'
+     FROM skill_trainer.learner_confusion_pairs cp
+     JOIN skill_trainer.quiz_attempts qa ON qa.pair_id = cp.pair_id AND qa.learner_key = cp.learner_key
      WHERE cp.learner_key = 'default'
-     GROUP BY cp.pair_id
+     GROUP BY cp.pair_id, cp.label_a, cp.label_b, cp.confusion_type, cp.success_count, cp.graded_count
      ORDER BY count(qa.attempt_id) DESC, cp.label_a`,
   )
   const skills = await query(

@@ -103,7 +103,7 @@ test("A4: 会話での使用の判定は、短縮形を広げた形でも一致�
   assert.ok(sent.data.attributedSkillKeys.includes("CAUSE_THATS_WHY"), JSON.stringify(sent.data.attributedSkillKeys))
 })
 
-test("A10: 候補の承認で作る練習問題は、自分の採点契約を指す", async () => {
+test("A10: 候補の承認で作る練習問題は、採点の版に合った採点契約を指す", async () => {
   const { rows } = await pool.query(
     `INSERT INTO skill_trainer.candidate_skills (pattern, meaning, need_count)
      VALUES ('I was about to say that.', 'ちょうど言おうとしていた', 1) RETURNING id`,
@@ -128,5 +128,56 @@ test("A10: 候補の承認で作る練習問題は、自分の採点契約を指
      WHERE ed.exercise_key = $1`,
     [`CANDIDATE-${candidateId}-CR`],
   )
-  assert.equal(contract.rows[0].assessment_contract_key, `adaptive:CANDIDATE-${candidateId}-CR`)
+  assert.equal(contract.rows[0].assessment_contract_key, "rubric:controlled-recall-v2")
+})
+
+test("混同ペア: 確認問題の回答は学習の状態だけを変え、教材の行は変えない", async () => {
+  const { rows } = await pool.query(
+    `SELECT p.probe_id, p.pair_id, p.expected_text, cp.source, cp.key_a
+     FROM skill_trainer.confusion_probes p JOIN skill_trainer.confusion_pairs cp ON cp.pair_id = p.pair_id
+     WHERE NOT EXISTS (SELECT 1 FROM skill_trainer.learner_confusion_state s WHERE s.pair_id = p.pair_id)
+     ORDER BY p.probe_id LIMIT 1`,
+  )
+  const probe = rows[0]
+  const result = await dispatch("skill_trainer_submit_attempt_v2", {
+    response_mode: "confusion_probe",
+    submission_id: crypto.randomUUID(),
+    probe_id: probe.probe_id,
+    answer_text: "definitely wrong answer",
+  })
+  assert.equal(result.ok, true, JSON.stringify(result))
+  assert.equal(result.data.outcome, "failure")
+  const state = await pool.query(
+    "SELECT graded_count, confusion_count, next_due_at FROM skill_trainer.learner_confusion_state WHERE learner_key = 'default' AND pair_id = $1",
+    [probe.pair_id],
+  )
+  assert.equal(state.rows[0].graded_count, 1)
+  assert.equal(state.rows[0].confusion_count, 1)
+  assert.ok(state.rows[0].next_due_at)
+  const pair = await pool.query("SELECT source, key_a FROM skill_trainer.confusion_pairs WHERE pair_id = $1", [probe.pair_id])
+  assert.equal(pair.rows[0].source, probe.source)
+  assert.equal(pair.rows[0].key_a, probe.key_a)
+})
+
+test("混同ペア: 教材にあるペアを画面から登録しても、AI を呼ばず、教材も確認問題も書き換えない", async () => {
+  process.env.ANTHROPIC_API_KEY = "test-key-not-real"
+  const { rows } = await pool.query(
+    "SELECT pair_id, label_a, label_b, key_a, source FROM skill_trainer.confusion_pairs WHERE source = 'catalog' ORDER BY label_a LIMIT 1",
+  )
+  const before = await pool.query("SELECT probe_id, prompt FROM skill_trainer.confusion_probes WHERE pair_id = $1 ORDER BY probe_id", [rows[0].pair_id])
+  const calls = anthropicCalls
+  const result = await dispatch("skill_trainer_register_confusion_pair_v2", { label_a: rows[0].label_b, label_b: rows[0].label_a })
+  assert.equal(result.ok, true, JSON.stringify(result))
+  assert.equal(anthropicCalls, calls)
+  const state = await pool.query(
+    "SELECT pending_sides, next_due_at FROM skill_trainer.learner_confusion_state WHERE learner_key = 'default' AND pair_id = $1",
+    [rows[0].pair_id],
+  )
+  assert.deepEqual(state.rows[0].pending_sides, ["a", "b"])
+  assert.ok(state.rows[0].next_due_at)
+  const pair = await pool.query("SELECT key_a, source FROM skill_trainer.confusion_pairs WHERE pair_id = $1", [rows[0].pair_id])
+  assert.deepEqual(pair.rows[0], { key_a: rows[0].key_a, source: "catalog" })
+  const after = await pool.query("SELECT probe_id, prompt FROM skill_trainer.confusion_probes WHERE pair_id = $1 ORDER BY probe_id", [rows[0].pair_id])
+  assert.deepEqual(after.rows, before.rows)
+  delete process.env.ANTHROPIC_API_KEY
 })

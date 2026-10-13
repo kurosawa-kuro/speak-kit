@@ -18,7 +18,7 @@ export async function loadState(db) {
   const pairs = (await db.query(
     `SELECT pair_id, label_a, label_b, skill_key_a, skill_key_b, key_a, direction_a, key_b, direction_b,
             confusion_type, source, created_at
-     FROM skill_trainer.confusion_pairs WHERE learner_key = 'default' ORDER BY created_at, pair_id`,
+     FROM skill_trainer.confusion_pairs ORDER BY created_at, pair_id`,
   )).rows
   const probes = (await db.query(
     `SELECT probe_id, pair_id, side, ordinal, prompt, expected_text
@@ -44,6 +44,7 @@ export async function learningCounts(db) {
     "grading_observations",
     "weakness_diagnoses",
     "confusion_events",
+    "learner_confusion_state",
     "conversation_sessions",
   ]
   const counts = {}

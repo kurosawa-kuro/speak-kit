@@ -41,7 +41,7 @@ function describeChange(before, after) {
 }
 
 /** YAML（loadContent の結果）と DB を比べ、反映する変更の一覧を作る。DB には書かない。 */
-export async function planSync(db, content, { catalogOnly = false } = {}) {
+export async function planSync(db, content) {
   const state = await loadState(db)
   const changes = []
   const notices = []
@@ -200,20 +200,12 @@ export async function planSync(db, content, { catalogOnly = false } = {}) {
       confusion_type: pair.confusionType,
     }
     if (!current) {
-      if (pair.source !== "catalog") {
-        if (catalogOnly) {
-          notices.push(`${entry._at} ${label} は画面から追加されたペア（${pair.source}）なので飛ばしました`)
-          continue
-        }
-        blockers.push(`${entry._at} 画面から追加された種類（${pair.source}）のペアは、YAML からは足せません。source を消してください`)
-        continue
-      }
       add("追加", label, `${probes.length} 問の確認問題、${quizzes.length} 問のクイズ`, (client) => client.query(
         `INSERT INTO skill_trainer.confusion_pairs
-           (pair_id, learner_key, label_a, label_b, skill_key_a, skill_key_b, key_a, direction_a,
+           (pair_id, label_a, label_b, skill_key_a, skill_key_b, key_a, direction_a,
             key_b, direction_b, confusion_type, source)
-         VALUES ($1, 'default', $2, $3, $4, $5, $6, $7, $8, $9, $10, 'catalog')`,
-        [pair.pairId, ...Object.values(fields)],
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        [pair.pairId, ...Object.values(fields), pair.source],
       ))
     } else {
       const before = Object.fromEntries(Object.keys(fields).map((key) => [key, current[key]]))
@@ -271,17 +263,17 @@ export async function planSync(db, content, { catalogOnly = false } = {}) {
 }
 
 async function insertDefinition(client, definition, skillKey, version, status) {
-  const contractKey = `adaptive:${definition.exerciseKey}`
+  const contractKey = `rubric:${definition.rubric.rubric_version}`
   await client.query(
     `INSERT INTO skill_trainer.assessment_contracts
        (contract_key, version, required_dimensions, response_modes, deterministic_policy,
         ai_observation_schema, evidence_policy, domain_id)
-     VALUES ($1, $2, $3, '["free_text"]'::jsonb,
+     VALUES ($1, 1, $2, '["free_text"]'::jsonb,
              '{"kind":"normalized_exact_or_accepted_variant","expected_reference":true,"accepted_variants":true}'::jsonb,
              '{"meaning_match":"boolean","speech_act_match":"boolean","comprehensibility":"enum","target_pattern_status":"enum","issues":"fact_array"}'::jsonb,
              'versioned_reducer', ${DOMAIN})
      ON CONFLICT DO NOTHING`,
-    [contractKey, version, JSON.stringify(definition.rubric.required_dimensions)],
+    [contractKey, JSON.stringify(definition.rubric.required_dimensions)],
   )
   await client.query(
     `INSERT INTO skill_trainer.exercise_definitions
@@ -289,7 +281,7 @@ async function insertDefinition(client, definition, skillKey, version, status) {
         reference_examples, accepted_variants, rubric, difficulty, modality, status, content_hash,
         assessment_contract_key, assessment_contract_version)
      VALUES ($1, $2, $3, (SELECT id FROM skill_trainer.skill_concepts WHERE stable_key = $4), $5, $6, $7, $8, $9,
-             $10, $11, $12, $13, $14, $2)`,
+             $10, $11, $12, $13, $14, 1)`,
     [
       definition.exerciseKey, version, definition.trainingMode, skillKey, definition.targetCapability,
       JSON.stringify(definition.promptSpec), JSON.stringify(definition.referenceExamples),
