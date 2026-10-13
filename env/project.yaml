@@ -10,12 +10,14 @@ homeDir: /Users/kurosawa
 
 githubRepo: https://github.com/kurosawa-kuro/speak-kit
 
-# 黒澤本人の一人用。毎日の学習運用ではない。パスワードは env/secret.yaml。
-supabaseProjectRef: xfbiyoqhdfsacmsbbafr
-supabaseUrl: https://xfbiyoqhdfsacmsbbafr.supabase.co
-supabaseRegion: south-asia-mumbai
+# 黒澤本人の一人用。2026-10-13 に東京で作り直した。DB のパスワードは env/secret.yaml。
+supabaseProjectRef: uhcfeyzwczepyjnqgwoq
+supabaseUrl: https://uhcfeyzwczepyjnqgwoq.supabase.co
+supabaseRegion: ap-northeast-1
 
-# CLI ログイン済み。speak-kit プロジェクトは未作成。
+# project speak-kit（関数は東京 hnd1）。デプロイは make cloud-deploy。
 vercelAccount: kurosawa8122-9989
 vercelTeam: toshifumi-kurosawas-projects
+vercelProject: speak-kit
+vercelUrl: https://speak-kit.vercel.app
 vercelExistingProjectNotUsed: vercel-nextjs-starter
