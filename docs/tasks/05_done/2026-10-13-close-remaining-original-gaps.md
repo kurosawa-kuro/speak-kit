@@ -184,3 +184,103 @@ choice のキー無し経路が Anthropic を待つか、書き込み先が `spe
 - 適用先が `speak_kit` 以外である
 - 参照元の処理が `speak_kit` の schema に無い列や表を前提にしている
 - Owner-only Decisions の項目に触れないと先へ進めない
+
+## Evidence（2026-10-13）
+
+観測の場所は 3 種類。
+
+- 画面: `http://localhost:3000/`（dev server、キーあり）
+- API: `dispatch` か `POST /api/<rpc>`
+- 写し: `/tmp` に一時的な Postgres（port 5544）を立て、`pg_dump` で `speak_kit` を写したもの。DB 名は `speak_kit` のままなので、`lib/db.mjs` の検査を通る。観測のあと停止して削除した。
+
+写しを使ったのは、時間の経過か大量の正解が要る観測（1 の解消、2、会話で使ってみる）と、人の観察の書き込み（44）である。owner の学習記録へ偽の回答を足さないためである。
+
+### Done Condition
+
+- 弱点診断: `weakness_diagnoses` d83313a4（INTENT / `CAUSE_THATS_WHY` / `SLOT_REPLACEMENT`、active、evidence_count 4）。新しい計画 b2af25d8 の先頭は「練習する · 場面に合う表現を改善するため」。
+  - 写しで同じ問題に模範解答を 11 回入れた。正答率 0.8・p50 2000ms で `resolved` になった。`get_progress` の `weeklySummary.overcomeCount` は 1、`overcome` は `That's why ....`。この表記は Rust の `learner_phrase` と同じ。
+- because / That's why: `confusion_events` に `mistake` 3 行。次に練習を開くと「混同している二つを分ける」カードが先に出て、「雨でした。だから家にいました。」が出題された（画面）。
+- 計画の完了: 計画 0f878237 は `completed`。画面に「今日の計画を完了しました」と「学習記録を見る」が出た。
+- 会話で使ってみる: 実 DB に `CONVERSATION_USAGE` 1 行（`REQUEST_COULD_YOU`、確かさ 90、会話 9 の turn 22）。
+  - 写しで `CHUNK_FEEL_BETTER` に `controlled_recall` を 3 回正解させると、`route.talkReady` が `[]` から `["CHUNK_FEEL_BETTER"]` になった。
+  - 会話で「feel better」と送ると、`gradingStatus` は `graded`、`attributedSkillKeys` は `["CHUNK_FEEL_BETTER"]`、`evidenceIds` は 1 件。`talkReady` は `[]` に戻った。
+  - 抽出の SQL は Rust の `skill_trainer_quiz.rs` 687〜700 行と同じ。
+- キー無し: `env -u ANTHROPIC_API_KEY node --test test/*.test.mjs` は 8/8 pass（写しで実行）。
+  - core の 4 ファイルに `lib/ai/client` と `api.anthropic.com` は無い（`test/ai-isolation.test.mjs` と `rg`）。
+  - キー unset のときの応答時間:
+    - free_text（`defer_unknown`）は 6〜7ms で `pending`。再送 17ms で `ungraded`（`grader unavailable: ANTHROPIC_API_KEY is unset`）。
+    - 会話の開始・送信・終了は 6 / 20 / 5ms。
+    - 混同ペア登録は 0ms で `confusion_key_unavailable`。
+
+### 項目ごと
+
+- 1: 上の弱点診断を参照。今日の「今の重点課題」と記録の重点課題・克服は、診断から出る。
+- 2: 写しで `CAUSE_THATS_WHY` の想起の正解を 2 日前へずらし、計画を作り直した。`RETENTION` / `RETENTION_1D` の active 行ができた（`evidence_snapshot.reason = retention_due`）。計画に「確かめる」（`spaced_retrieval`、`retention_due:RETENTION_1D`）が出た。
+- 3・4: `mistake` 行と、境界の行・`notice_for_attempt` の応答。採点の応答は `confusion`、`estimate`、`diagnosis`、`dimensions` を返す。再判定の応答は `regradeId`、`observerVersion`、`adoptedForEvidence` を返す。
+- 5: 計画の回答「Would you like to have lunch together?」は、まず `pending`（項目は `awaiting_grade`）で返った。2 秒ごとの再送で AI の成功と日本語の理由を受け取った。
+- 6: owner 判断で対象外。
+- 7: 写しで確かめた。
+  - 同じ `attempt_id` で回答時間だけ変えると、`idempotency_conflict`（`attempt_id was already used with different immutable input`）。
+  - まったく同じ再送は `idempotent_replay`。
+  - 画面から送った `session_id` と `occurred_at` は `training_attempts` に保存される。
+- 8: 計画の応答は、Verify 以外の正解済みの項目を出さない。並ぶのは planned / in_progress / awaiting_grade だけ（Rust の `fetch_plan_response` と同じ）。
+- 9〜13: 今日の画面は Today.tsx の写し。計画モード、目的 · 理由のバッジ、空・失敗・0 件の表示、弱点の種類のバッジを画面で確認した。
+- 14〜20: 実践練習は Train.tsx の写しで、次を画面で確認した。
+  - 回答時間は実測で送る。「再判定する」が出る。
+  - 確認問題のカード: 失敗は「要復習」と 5 項目、成功は「境界のこちら側は分かれました。」。期限の来た確認問題が先に出る。
+  - 「戻る」、今日の練習／自由練習、`?plan=today` / `?tab=practice&skill=`。
+  - 英語のエラーは `uiErrorMessage` で日本語の定型文になる。
+- 21: 混同ペアの AI 下書きは `json_schema` の構造化出力を使う。
+- 22〜25: クイズの結果パネル（正解 ✓、この表現、次へ（Enter））、問題の種類、選択肢の色を画面で確認した。
+- 26〜33・35:
+  - 会話の役割文・冒頭・各ターンの指示は、`english_conversation.rs` の全文。
+  - teacher で AI の冒頭と返答が吹き出しで出た。
+  - 終了画面には次が出た。
+    - 「3ターン・0分」と 6 枚の指標カード（平均 10 秒）
+    - 候補の案内と「もう一度話す」
+  - 写しで確かめた。
+    - 終了した会話 12 への送信は `session_ended`。
+    - 同じ `turn_id` と同じ入力の再送は `idempotent_replay` で、元の返答を返した。
+    - 発言だけ変えると `idempotency_conflict`。
+  - キー無しでは `TALK_TURN_FALLBACK` を返し、観察は `ungraded`。
+- 34: 承認／却下は残した（owner 判断）。終了画面の「候補の確認」に、候補 4「I'd like to change my schedule.」／「予定を変更したいです」が出た。
+  - 送る中身は `review_candidate` の入力どおり（`stable_key: FREEZE_<id>`、`canonical_form`、`exercise_prompt`、`expected_reference`、`category: OUTPUT`）。
+  - `candidate_id` が整数 999999 なら `not_found`、文字列 "999999" なら `validation_error`。Rust の `as_i64` と同じ。
+  - 候補 3・4 は owner の確認待ちのまま残した。
+- 36〜43: 記録は Progress.tsx の写しで、次を画面で確認した。
+  - 詳細の開閉、6 セッション・平均 3.2 秒、表現 50 枚、採点の状態一覧。
+  - 「覚えたものを再チェック」は、準備しています → 再チェック待ち 2 問 → 注記。
+- 44: 写しで、AI 採点済みの回答 84063ebf に人の観察（`semantic` だけ fail）を記録した。結果は `outcome: failure`、`adoptedForEvidence: true`。有効な証拠は `ai / success` から `human / failure` に替わった。
+- 45: `compare_observations` は `observationCount`、`hasOutcomeDisagreement`、各観察の `source`、`observerVersion`、`dimensions`、`outcome` を返した。
+- 46: `get_trace` は `plan_item_id` f4cc3572 で、次を返した。
+  - `planId`、`exerciseInstanceId`、`attemptId`、`gradingId`、`evidenceId`、`diagnosisIds`
+  - `nextPlanItemId`（d003b1f9）
+  - `versions`（policy / estimator / diagnosisRule / evidenceDerivation / evidenceSelection）
+- 47: `evaluate_phase_gate` は次を返した。
+  - 全体: `status: not_passed`
+  - 要件ごと: `status: insufficient_evidence` と `estimate`
+  - `scenarioResults`: teacher と learner は `not_passed`、free_talk は `insufficient_evidence`
+
+### 参照元どおりに写した癖
+
+- 会話の発言は短縮形を展開してから例文と比べる。例文の側は展開しない。そのため「That's why ...」は会話では `CAUSE_THATS_WHY` に帰属しない。
+- 候補抽出の `existing_candidate_id` の示唆は、読むが使わない。
+- `pair_notice` は、別の期限の来たペアを返すことがある。
+- 確認問題の採点は、`folded` の完全一致。
+- `skipped` の項目が残ると、計画は完了しない。「覚えたものを再チェック」で planned に戻る。
+- 境界の行は `plan.data.dueConfusion` を優先するので、古いペアを出すことがある。
+- `phase1-observer-ai-v7`、`quiz-choice-v1`、`confusion-probe-v1` の採点方法の表示は「採点方法不明」。
+- envelope の `replayed` は常に false。再送は `code: idempotent_replay` で示す。
+
+### 意図して参照元と変えたところ
+
+- 会話の終了応答に `candidates`（この会話から出た未確認の候補）を足した。承認／却下のためである。
+- 会話の開始中・開始失敗の表示を、場面選択の外に出した。参照元ではここに到達しない。
+- 今日と練習の空・完了の表示に `data &&` を足した。読み込み前に一瞬出るのを防ぐためである。
+
+### 実 DB に残した作業の跡
+
+- 17:39:17〜17:39:20 に、16 の表現の言い換え練習へ、エージェントの模範解答の成功が 1 件ずつ入った。確認用のスクリプトが、`skill_key` を優先順位としてしか扱わない参照元どおりの選び方で、別の表現へ流れたためである。
+  - 表は追記のみで、更新も削除もできない。owner の判断で、「覚えたものを再チェック」を 1 回実行した（`masteredPromptCount: 0`、`recheckDueCount: 18`）。行は残り、正答率には 1 件ずつ数えられたままである。
+- `speak_kit` の回答 65 件は、すべて 2026-10-13 の検証中に作られた。
+- `phase1-talk-rules-v1` の観察 4 行（会話 2・5・6・7）は、前の実装（08f46c8）の跡。今のコードは作らない。残した。
