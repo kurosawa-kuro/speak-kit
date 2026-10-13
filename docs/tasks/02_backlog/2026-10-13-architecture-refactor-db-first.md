@@ -23,6 +23,7 @@
   - その次は、記述回答の採点の書き込み 10 本前後がトランザクションに入っていないこと（`lib/attempt.mjs`）。途中で失敗したときは、後から修復するコードで帳尻を合わせている。
 - **画面は Next.js の実ルートにする。** 今は `useState` の自前ルーターで、URL と連動しない。リロードや「戻る」で画面が消える。
 - **すぐ直すべきバグが 10 件ある**（第 1 段）。
+- **追加された設定画面は、機能としては正しく動く。** ただし、構造の問題が 3 つある（問題点 E）。設定だけ RPC と別の API の形になっていること、AI の可否を 1 つの操作の中で何度も DB から読むこと、起動時の設定を二重に定義していることである。第 3 段で RPC にまとめる。
 
 ## 調査の範囲と方法
 
@@ -160,6 +161,67 @@ Postgres speak_kit.skill_trainer（27 表、トリガーで暗黙に行を作る
    - 空の DB には、手で role などを作らないと乗らない。
    - seed の SQL（約 1,500 行）が教材を持っていて、YAML と二重管理になる。
 
+### E. 設定画面（2026-10-13 追加分の再調査）
+
+対象: 次の 8 ファイル（コミット `4934163` 時点）。
+
+- `sql/postgres/20261013090000_speak_kit_learner_settings.sql`
+- `src/lib/settings.mjs`
+- `src/lib/ai/isEnabled.mjs`
+- `src/lib/ai/client.mjs`
+- `src/app/api/settings/route.js`
+- `src/app/api/ai/status/route.js`
+- `src/app/screens/settings.js`
+- `src/test/settings.test.mjs`
+
+**できていること:**
+
+- AI を使えるかの判定を `aiStatus()` の 1 か所に集め、設定とキーの有無から決めている。
+- `askClaude` は送信の直前に必ず `aiGate()` を通る。設定がオフなら、キーがあっても Anthropic へ接続しない（テストで確かめている）。
+- 画面とサーバーが「設定でオフ」と「キー未設定」を言い分けている。
+- キーの値は応答に含めない。
+- ログインと保存先は、画面では変えずに表示だけにしている。
+
+**問題:**
+
+1. **AI の可否を、毎回 DB から読んでいる**
+   - `aiStatus()` は呼ばれるたびに `learner_settings` を SELECT する。
+   - 1 つの操作の中で何度も呼ばれる。
+     - `getPractice` で 2 回（`practice.mjs:71, 178`）
+     - 会話の送信で、応答用（`talk.mjs:256, 385`）と AI 呼び出しの前（`aiGate`）
+     - `askClaude` を呼ぶたびに 1 回
+   - 判定の入口も 4 つある（`aiStatus`、`aiAvailability`、`aiEnabled`、`aiGate`）。キーの有無の確認が `aiEnabled` と `aiGate` で重複している。
+2. **トランザクションの中から別の接続で設定を読む**
+   - `sendTalkMessage` と `endTalkSession` は、ロックを取ったトランザクションの中で `aiAvailability()` と `askClaude()` を呼ぶ。
+   - その中の `getSettings()` は、トランザクションの `client` ではなく、プールの別の接続を使う。
+   - B1 の「トランザクション内で AI を待つ」問題に、接続をもう 1 本使う問題が加わった。
+3. **設定だけ API の形が違う**
+   - `/api/settings` は、16 RPC の `/api/[name]` → `dispatch` の外にある別のルートである。
+   - 応答に `api_version` が無く、検証の誤りは HTTP 400 を返す。ほかの RPC は 200 を返す。
+   - 画面側も `useRpc` を使わず、`settings.js` が自前の `fetch` を持つ。データ取得の経路が 4 つ目になった（`ui/rpc.js`、`ui/use-rpc.js`、`ai/panel.js`、`screens/settings.js`）。
+4. **起動時の設定が二重に定義されている**
+   - `startupSettings()`（`settings.mjs:17-23`）は、接続先の URL を `db.mjs` とは別に組み立て直している。既定の URL（ユーザー名 `kurosawa` 入り）も重複している。
+   - `login: "disabled"` と `kind: "local"` は固定の値で、実際の起動設定を読んでいない。
+5. **固定値がまた増えた**
+   - `const LEARNER = "default"`（`settings.mjs:3`）。
+   - AI を使う機能の一覧 `AI_FEATURES`（`settings.js:6`）が画面に直書きされている。実際に AI を使う箇所（採点、会話、候補抽出、混同ペアの下書き）とずれても気づけない。
+6. **文言の対応表が 2 つある**
+   - 理由の文言が、サーバーの `AI_REASON_MESSAGES`（`isEnabled.mjs:3-6`）と、画面の `aiReasonLabel`（`labels.js:109-113`）の 2 か所にある。句点の有無も違う。
+7. **設定の表の置き場**
+   - `learner_settings` は参照元の `skill_trainer` スキーマに、参照元の 28 本に続く 29 本目として足された。
+   - `learner_key` は FK の無い文字列である。既定値が `ai_enabled = true` になっている。
+   - 列を足すたびに migration が要る。今後の設定項目（今日の量、既定の会話相手、タイムゾーンなど）を列で増やすか、キーと値で持つかを決める必要がある。
+8. **テストが本物の設定を切り替える**
+   - `settings.test.mjs` は、本物の `speak_kit` の `ai_enabled` をオフ・オンにし、終わったら元に戻す。
+   - テストの間（約 1 秒）は、動いているアプリでも AI がオフになる。テストが途中で止まると、オフのまま残る。
+   - 本物の学習記録にも、回答と会話を書き込む（`実運用可能な状況かをレビュー依頼.md` の R2）。
+9. **認証が無いまま設定を変えられる**
+   - `POST /api/settings` は誰でも呼べる。開発サーバーは LAN に開いている（同レビューの R3）。
+   - 同じ Wi-Fi の誰でも、AI のオン・オフを切り替えられる。
+10. **`/api/ai/status` は、もう画面から使われていない**
+    - 設定画面は `/api/settings` を使う。各画面は RPC の応答の `aiAvailable` / `aiReason` を使う。
+    - 呼んでいるのは、どこからも描画されない `app/ai/panel.js` だけである。
+
 ## 目標の形
 
 ### サーバーの層
@@ -175,7 +237,10 @@ src/server/domain/              純粋な関数。DB も AI も使わない。�
 src/server/repo/                SQL だけ。client を引数で受け、どのトランザクションにも乗れる
   attempts / observations / evidence / plans / content / confusion / talk
 src/server/ai/                  AI の窓口。fetch を差し替えられる。プロンプトは prompts.mjs の 1 か所
-src/server/config.mjs           learner_key、ドメイン、タイムゾーン、AI の設定、閾値
+src/server/config.mjs           起動時の設定（learner_key、ドメイン、タイムゾーン、DB の接続先、ログインの有無、AI のモデル・タイムアウト、閾値）。
+                                環境変数を読むのはここだけ。設定画面の「起動時の設定」はここから表示する
+src/server/services/settings    画面から変える設定。1 回の操作の最初に 1 度だけ読み、AI の可否と一緒に
+                                「操作の文脈」（learner、設定、aiAvailable / aiReason）として各 service に渡す
 src/server/http/                validate（text・uuid・回答時間）、envelope、エラーの型
 ```
 
@@ -186,6 +251,13 @@ src/server/http/                validate（text・uuid・回答時間）、envel
 - **再送の確認は、ロックかトランザクションの中で行う。** 一意制約にぶつかったら、再送として扱う。
 - **読み取りの RPC は書き込まない。** 計画を作るのは「今日の計画を作る」操作に分ける。
 - **エラーは 1 つの envelope にそろえる。** 検証の誤りは 400、見つからないは 404、想定外は 500 で返す。画面向けの日本語の文言は、`code` から画面側で決める。
+- **AI の可否は、1 回の操作で 1 度だけ決める。**
+  - 操作の最初に、設定とキーの有無から `aiAvailable` / `aiReason` を決め、文脈として渡す。
+  - AI の窓口（`server/ai`）は、その文脈を受け取って送るか止めるかを決める。DB は読まない。
+  - 判定の入口は 1 つにする（今の `aiStatus`・`aiAvailability`・`aiEnabled`・`aiGate` をまとめる）。
+- **設定も RPC の 1 つにする。** `skill_trainer_get_settings` と `skill_trainer_save_settings` を `dispatch` に足し、ほかの RPC と同じ envelope と `useRpc` で扱う。`/api/settings` と `/api/ai/status` は消す。
+- **理由などの文言は画面側の 1 か所に置く。** サーバーは `code`（`setting_off` / `key_missing`）だけを返す。
+- **AI を使う機能の一覧はサーバーが持つ。** 設定画面の「オフにすると使えないもの」は、その一覧から表示する。
 
 ### 画面の形
 
@@ -225,7 +297,7 @@ src/app/_lib/                      labels, format（秒・%・分の整形を 1 
 | 記録 | `conversation_sessions`, `conversation_turns` | 残す。会話の判定は JSON ではなくターンの列を正にする。`learner_key` を足す |
 | 計画・診断 | `training_plans`, `training_plan_items`, `weakness_diagnoses`, `rendered_exercises`, `review_resets`, `quiz_promotions` | 残す |
 | 設定 | `learning_policy_versions`, `learner_phase_gate_policies` | 残す。v1 と v2 が同じ時刻にならないように `effective_at` を固定値にする |
-| 設定 | `learners`（新）、`learner_settings`（新） | 学習者の表と、設定画面の保存先 |
+| 設定 | `learners`（新）、`learner_settings`（2026-10-13 に追加済み） | 学習者の表を足し、`learner_settings.learner_key` から FK で指す。`learner_settings` は baseline に取り込む。今後の設定項目（今日の量、既定の会話相手、タイムゾーンなど）は、型の付いた列で足す。キーと値の汎用表にはしない。理由は、値の型と既定値を DB で守れるから |
 | 一覧 | `capabilities`（新） | 能力名の一覧。各表の能力の列から FK で指す |
 | 削除 | `learning_policy`, `attempt_responses`（とトリガー）, ビュー `evaluations` | 使われていない |
 | 管理 | `schema_migrations`（新） | 適用済みの migration を記録する |
@@ -267,7 +339,11 @@ migration の作り直し:
    - candidates
    - gate
 4. `handlers/*` と `route.js` で、エラーを 1 つの envelope にそろえる。
-5. 使われていない `lib/ai/features.mjs`、`/api/ai/*`、`app/ai/*`、未使用の export を消す。設定画面で要る `/api/ai/status` は、新しい形で作り直す。
+5. 使われていない `lib/ai/features.mjs`、`/api/ai/*`（`/api/ai/status` を含む）、`app/ai/*`、未使用の export を消す。
+6. 設定を RPC にまとめる（E の 1〜6）。
+   - `config.mjs` に起動時の設定を集め、`startupSettings()` と `db.mjs` の二重定義をなくす。
+   - 操作の文脈で AI の可否を 1 度だけ決め、トランザクションの中で別の接続を取らないようにする。
+   - `/api/settings` を `skill_trainer_get_settings` / `skill_trainer_save_settings` に置き換える。
 
 ### 第 4 段: 画面の作り直し
 
@@ -275,6 +351,7 @@ migration の作り直し:
 2. 共通部品とフックを作り、各画面のコピーを置き換える。
 3. `Train` を分ける。
 4. 業務の判断をサーバーの応答に移す（第 3 段の応答に項目を足す）。
+5. 設定画面を `src/app/(main)/settings/page.js` に移し、自前の `fetch` を `useRpc` に置き換える。理由の文言は `labels` の 1 か所にする。
 
 ### 第 5 段: 仕上げ
 
