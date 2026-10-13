@@ -37,6 +37,7 @@
 | [07_test_strategy.md](./07_test_strategy.md) | テスト方針と品質ゲート |
 | [08_release_runbook.md](./08_release_runbook.md) | リリース・マイグレーション・復旧 |
 | [tasks/README.md](./tasks/README.md) | 日次運用の実行ハブ、作業計画、実装タスク |
+| [adr/](./adr/) | 判断の理由。[0001](./adr/0001-keep-vercel-and-supabase.md): 実行環境は Vercel、DB は Supabase のまま（Cloudflare へは移さない） |
 
 ## ハーネス（AI 制御）
 

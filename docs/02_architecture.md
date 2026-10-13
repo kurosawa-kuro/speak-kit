@@ -95,6 +95,8 @@ Rust API を crate 依存、`local-api-host` 経由、sqlx のままでは載せ
 
 この用途では Vercel を採る。Next.js の一次対応であり、GitHub 連携、env、ビルドまでを一つの手順にできる。Cloudflare（Pages / Workers）は、Next.js にアダプタと Edge runtime の制約が入り、動画の手順がずれやすい。Cloudflare を検討するのは、将来 Next.js 以外へ変える場合である。音声処理は作らない。Doppler にある Cloudflare の鍵は、このアプリのデプロイには使わない。
 
+自分用のクラウドを立てたあと、認証と DB を Cloudflare（Access・D1・Workers）に寄せて Vercel を外す案を検討し、一旦いまのまま（Vercel + Supabase + Basic 認証）とした。理由と見直す条件は [adr/0001-keep-vercel-and-supabase.md](./adr/0001-keep-vercel-and-supabase.md)。
+
 ## 関連タスク
 
 - 構造変更、責務移動、adapter 追加、共通化は、実装前に `docs/tasks/03_active/` へ task を作る。
