@@ -84,4 +84,3 @@ terraform.tfstate.*
 *.sqlite3-*
 uploads/
 .vercel
-.env*
