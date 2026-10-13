@@ -13,7 +13,7 @@ const coreFiles = [
 test("core files do not import the AI client", () => {
   for (const file of coreFiles) {
     const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8")
-    assert.equal(source.includes("lib/ai/client"), false, file)
+    assert.equal(source.includes("ai/client"), false, file)
     assert.equal(source.includes("api.anthropic.com"), false, file)
   }
 })
