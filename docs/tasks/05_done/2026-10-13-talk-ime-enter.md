@@ -63,3 +63,30 @@
 
 - 直す前と後の、Chrome と Safari での操作結果
 - 会話の記録（`conversation_turns`）に、書きかけの文が入っていないこと
+
+## Result（2026-10-13）
+
+- 判定を `src/app/ui/keys.js` の 2 つの関数にした。2 か所以上で使うため（Scope 3）。
+  - `isImeEnter(event)`: 変換中（`nativeEvent.isComposing`）か、Safari の変換確定（`keyCode === 229`）の Enter なら true。
+  - `isSubmitEnter(event)`: それ以外の Enter なら true。
+- `src/app/screens/talk.js`: 送信の条件を `e.key === "Enter"` から `isSubmitEnter(e)` にした。
+- `src/app/screens/train.js` の混同ペア登録欄（2 つの入力欄）: `isImeEnter` のときはフォーム送信を止める。Safari を実機で確かめられないため、同じ判定を先に足した（Scope 2）。Chrome では元から送られないので、動きは変わらない。
+- `src/test/keys.test.mjs`（4 件）: Chrome の変換中、Safari の変換確定、ふつうの Enter、Enter 以外を確かめる。
+
+## Evidence
+
+ブラウザ（Cursor 内蔵の Chromium、`localhost:3000`）で会話画面を開き、入力欄に「こんにちは」を入れて keydown を送った。本物の DB に書かないよう、ページの `fetch` を差し替えて、会話の開始には偽の応答を返し、送信は数えるだけにした。
+
+| 送ったキー | 送信の回数 | 入力欄 |
+|---|---|---|
+| Enter（`isComposing: true`。Chrome の変換中） | 0 | 「こんにちは」が残る |
+| Enter（`keyCode: 229`。Safari の変換確定） | 0 | 「こんにちは」が残る |
+| ふつうの Enter | 1（`message: "こんにちは"`） | 空になる |
+
+- 直す前のコードは `e.key === "Enter"` だけを見ていたので、上の 2 行もそれぞれ 1 回送られていた（判定の条件から分かる）。
+- 送信の通信は差し替えた `fetch` で止めたので、`conversation_turns` には書いていない。
+- `npm test`: 25 件中 25 件が通った（R2 の後、`speak_kit_test` で実行）。
+
+## 確かめられなかったこと
+
+- 実際の日本語入力（IME）での操作と、Safari での操作。この環境からはキーボードの IME と Safari を動かせない。Safari の変換確定の Enter が出す信号（`keyCode 229`）を、上の 2 行目で代わりに送った。owner が Safari で一度「こんにちは」→ 変換確定の Enter → もう一度 Enter と試すと確定する。

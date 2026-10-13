@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useRpc } from "../ui/use-rpc"
 import { useNav } from "../ui/nav"
 import { QuickQuiz } from "./quiz"
+import { isImeEnter } from "../ui/keys"
 import { aiReasonLabel, capabilityLabel, purposeLabel, reasonLabel, trainingModeLabel, uiErrorMessage } from "../ui/labels"
 
 const modes = [
@@ -442,8 +443,8 @@ export function Train() {
         >
           <p className="text-xs font-semibold text-neutral-500">この二つが混ざる</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <input value={mixA} onChange={(event) => setMixA(event.target.value)} placeholder="一つ目" className="h-11 rounded-md border border-neutral-700 bg-neutral-950 px-3 text-sm outline-none focus:border-emerald-500" />
-            <input value={mixB} onChange={(event) => setMixB(event.target.value)} placeholder="二つ目" className="h-11 rounded-md border border-neutral-700 bg-neutral-950 px-3 text-sm outline-none focus:border-emerald-500" />
+            <input value={mixA} onChange={(event) => setMixA(event.target.value)} onKeyDown={(event) => { if (isImeEnter(event)) event.preventDefault() }} placeholder="一つ目" className="h-11 rounded-md border border-neutral-700 bg-neutral-950 px-3 text-sm outline-none focus:border-emerald-500" />
+            <input value={mixB} onChange={(event) => setMixB(event.target.value)} onKeyDown={(event) => { if (isImeEnter(event)) event.preventDefault() }} placeholder="二つ目" className="h-11 rounded-md border border-neutral-700 bg-neutral-950 px-3 text-sm outline-none focus:border-emerald-500" />
           </div>
           <button type="submit" disabled={registerPair.loading || mixA.trim() === "" || mixB.trim() === ""} className="mt-3 flex h-11 w-full items-center justify-center rounded-md bg-neutral-800 text-sm font-semibold disabled:text-neutral-500">
             {registerPair.loading ? <Spinner size="h-4 w-4" /> : "違いを作って確認する"}

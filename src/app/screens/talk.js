@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react"
 import { useRpc } from "../ui/use-rpc"
 import { aiReasonLabel, uiErrorMessage } from "../ui/labels"
+import { isSubmitEnter } from "../ui/keys"
 
 const SCENARIOS = [
   { value: "teacher", label: "講師と話す", description: "英語教師が簡単な英語で助けながら会話を進める" },
@@ -200,7 +201,7 @@ export function Talk() {
                 if (focusAtRef.current === null) focusAtRef.current = Date.now()
               }}
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleSend()
+                if (isSubmitEnter(e)) handleSend()
               }}
               placeholder="英語でメッセージを入力"
               className="h-12 flex-1 rounded-md border border-neutral-800 bg-neutral-950 px-4 text-base text-neutral-100 placeholder:text-neutral-500 focus:border-neutral-600 focus:outline-none"
