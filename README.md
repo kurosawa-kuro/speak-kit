@@ -107,6 +107,10 @@ npm run data:sync -- --apply    # 反映する
 
 画面から増えた教材（会話の候補の承認、混同ペアの登録）は DB に入る。`npm run data:export` で YAML に取り込める。
 
+### テスト
+
+`npm test` は、テスト用の DB `speak_kit_test` を毎回空から作り直し（`scripts/reset-test-db.sh`。schema と `data/` の教材を入れる）、そこに向けてテストを流す。本物の `speak_kit` には書かない。DB に書くテストは、接続先が `speak_kit_test` でなければ何も書かずに失敗する。
+
 ハーネスの非機密設定は `env/config.yaml`、ローカル秘密情報は `env/secret.yaml`、チーム共有は Doppler（`doppler.yaml`）。配布先の実行時秘密（Supabase、任意の Anthropic キー）は、各自の Vercel と Supabase に置く。開発中の `speak-next` を含め、live の学習者データベースへは書かない。
 
 ## ドキュメント

@@ -41,7 +41,7 @@ function describeChange(before, after) {
 }
 
 /** YAML（loadContent の結果）と DB を比べ、反映する変更の一覧を作る。DB には書かない。 */
-export async function planSync(db, content) {
+export async function planSync(db, content, { catalogOnly = false } = {}) {
   const state = await loadState(db)
   const changes = []
   const notices = []
@@ -201,6 +201,10 @@ export async function planSync(db, content) {
     }
     if (!current) {
       if (pair.source !== "catalog") {
+        if (catalogOnly) {
+          notices.push(`${entry._at} ${label} は画面から追加されたペア（${pair.source}）なので飛ばしました`)
+          continue
+        }
         blockers.push(`${entry._at} 画面から追加された種類（${pair.source}）のペアは、YAML からは足せません。source を消してください`)
         continue
       }

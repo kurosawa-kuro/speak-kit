@@ -1,7 +1,7 @@
+import { pool } from "./test-db.mjs"
 import assert from "node:assert/strict"
 import test from "node:test"
 import { dispatch } from "../lib/dispatch.mjs"
-import { pool } from "../lib/db.mjs"
 import { aiStatus } from "../lib/ai/isEnabled.mjs"
 import { feedback, scenario, talk } from "../lib/ai/features.mjs"
 import { getSettings, saveSettings } from "../lib/settings.mjs"

@@ -11,6 +11,10 @@ git diff --check
 
 `make test` の中身は未記入である。アプリ着手時に、下の条件を実行できるコマンドへ置き換える。
 
+## テストの DB
+
+`npm test` は、テスト用の DB `speak_kit_test` を毎回空から作り直してから流す（`scripts/reset-test-db.sh`。前提の role と表、`sql/postgres/*.sql`、`data/` の教材を入れる。画面から登録された混同ペアは入れない）。本物の `speak_kit` には書かない。DB に書くテストは `src/test/test-db.mjs` を最初に import し、接続先が `speak_kit_test` でなければ何も書かずに失敗する。
+
 ## テスト範囲
 
 | 範囲 | コマンド | 備考 |

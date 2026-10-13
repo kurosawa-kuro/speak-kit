@@ -80,3 +80,67 @@
 - `npm test` の前後の、本物の `speak_kit` の件数の表
 - `npm test` の出力
 - Scope 3 の失敗の出力
+
+## Result（2026-10-13）
+
+- `src/lib/db.mjs`: 接続してよい DB を `speak_kit` と `speak_kit_test` だけにした。`flow` と、ほかの名前は拒否する。
+- `scripts/reset-test-db.sh`（新規）: `speak_kit_test` を DROP → CREATE し、前提の role `job_control_api`（無ければ作る）と表 `public.flow_schema_migrations` を作る。`sql/postgres/*.sql` 29 本を順に流し、`data/` の教材を入れる。
+- `src/cli/data.mjs` / `src/lib/content/sync.mjs`: `data:sync` に `--catalog-only` を足した。空の DB に入れるとき、画面から登録された混同ペア（YAML の `source: learner_registered` の 2 件）は YAML からは足せず止まるので、飛ばす。付けないときの動きは今までどおり。
+- `src/test/test-db.mjs`（新規）: 最初に `current_database()` を調べ、`speak_kit_test` でなければ何も書かずに失敗する。DB に書く `golden-path.test.mjs` と `settings.test.mjs` は、これを最初に import する。
+- `package.json` の `test`: `sh scripts/reset-test-db.sh && SPEAK_KIT_DATABASE_URL=postgresql://kurosawa@localhost:5432/speak_kit_test node --test src/test/*.test.mjs`
+- 文書: `README.md`（テスト節）、`docs/07_test_strategy.md`（テストの DB）、`data/README.md`（`--catalog-only`）。
+- Scope 4（既に入った偽の行の片付け）は行わない。DB の作り直し（リファクタリング案の第 2 段）でまとめて捨てる。
+
+## Evidence
+
+`npm test` を 2 回流した。
+
+```text
+=== run 1
+reset speak_kit_test: 29 schema files + data/ applied
+# tests 25
+# pass 25
+# fail 0
+=== run 2
+reset speak_kit_test: 29 schema files + data/ applied
+# tests 25
+# pass 25
+# fail 0
+```
+
+本物の `speak_kit` は、作業前に全 30 表の件数と `learner_settings` を記録し、2 回の `npm test` の後に比べた。差分は 0 だった。
+
+| 表 | 前 | 後 |
+|---|---|---|
+| `training_attempts` | 70 | 70 |
+| `quiz_attempts` | 34 | 34 |
+| `conversation_sessions` | 16 | 16 |
+| `confusion_pairs` | 34 | 34 |
+| `learner_settings` | `default / ai_enabled true / 2026-10-13 18:55:32.810277+09` | 同じ |
+
+テストの回答は `speak_kit_test` に入った（`quiz_attempts` 3 件）。
+
+Scope 3（接続先を付けずに直接実行）:
+
+```text
+$ node --test src/test/golden-path.test.mjs src/test/settings.test.mjs
+# Error: テストは speak_kit_test でだけ動かす（今の接続先: speak_kit）。npm test で実行すること
+# Error: テストは speak_kit_test でだけ動かす（今の接続先: speak_kit）。npm test で実行すること
+# pass 0
+# fail 2
+```
+
+この後も本物の `speak_kit` の件数は変わっていない。
+
+`db.mjs` の接続先の検査:
+
+```text
+flow           → rejected: speak-kit refuses database flow
+other          → rejected: speak-kit database must be speak_kit or speak_kit_test, got other
+speak_kit_test → accepted
+```
+
+## 残ること
+
+- 既に本物の `speak_kit` に入っている偽の行（クイズ・記述の回答、テストの会話、lend / borrow の混同ペア）は残っている。DB の作り直しで捨てる。
+- `npm test` は毎回 `speak_kit_test` を消して作り直す。実行中に別の `npm test` を重ねて流さないこと。

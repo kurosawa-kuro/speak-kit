@@ -10,8 +10,8 @@ function connectionString() {
   if (name === "flow" || name === "") {
     throw new Error("speak-kit refuses database flow")
   }
-  if (name !== "speak_kit") {
-    throw new Error(`speak-kit database must be speak_kit, got ${name}`)
+  if (name !== "speak_kit" && name !== "speak_kit_test") {
+    throw new Error(`speak-kit database must be speak_kit or speak_kit_test, got ${name}`)
   }
   return url
 }

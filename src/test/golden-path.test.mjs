@@ -1,7 +1,7 @@
+import { pool } from "./test-db.mjs"
 import assert from "node:assert/strict"
 import test from "node:test"
 import { dispatch } from "../lib/dispatch.mjs"
-import { pool } from "../lib/db.mjs"
 
 test("choice golden path does not require an AI key", async () => {
   delete process.env.ANTHROPIC_API_KEY
