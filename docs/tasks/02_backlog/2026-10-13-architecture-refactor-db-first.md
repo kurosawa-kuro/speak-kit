@@ -620,3 +620,45 @@ migration の作り直し:
 - `confusion_events` を「確認問題の結果」と「誤答から見つけた混同」に分けること。
 - 会話の判定を、JSON ではなくターンの列を正にすること。
 - 確認問題の文を変えるときの版の扱い（今は YAML 同期が書き換えを止めている）。
+
+### 第 3 段（2026-10-13 19〜20 時台）
+
+やったこと:
+
+- `src/lib` をなくし、サーバーのコードを `src/server/` にまとめた。
+  - `config.mjs`: 環境変数を読むのはここだけ。DB の接続先・接続してよい DB 名（`speak_kit` / `speak_kit_test`）・データの置き場の種類（local / supabase）・`Pool` の設定・AI のモデルと料金と利用上限・エラーログの置き場を持つ。`startupSettings()` もここ。CLI（`src/cli/data.mjs`）もここから読む。
+  - `domain/`（`normalize.mjs`・`boundary.mjs`・`hash.mjs`）: DB も AI も使わない純粋な関数。単体テストを付けた。
+  - `http/`（`envelope.mjs`・`validate.mjs`・`errors.mjs`）。
+  - `content/write.mjs`: 教材を DB に書く SQL をここだけに置いた。YAML の同期、候補の承認、混同ペアの登録が同じ関数を呼ぶ。
+- 候補の承認（O2）: YAML の表現と同じ形を作り、YAML と同じ検査（`expressionErrors`）と同じ導出（`deriveDefinitions`）を通す。tier1 の型なら、思い出す・意味を選ぶ・一部を入れ替える・間隔を空けた 3 本の練習問題ができる（元は 1 本）。code は空いている次の `P1-` 番号。すでにある key へまとめるときは `extra_examples` に 1 つ足す。手順は `data/README.md` に書いた。
+- 混同ペアの登録も、YAML のペアと同じ形を作って `derivePair` → `insertPairContent` で書く。
+- AI:
+  - 1 回の操作の最初に「操作の文脈」（学習者、設定、キーの有無、今日と今月の使用額、AI を使えるか、使えない理由）を 1 度だけ決め、サービスへ渡す。理由は `setting_off` / `key_missing` / `limit_reached`。
+  - AI の窓口 `askClaude` は文脈だけを見て送るかを決める。応答の `usage` から金額を出し `ai_usage` に残す。1 日 2 ドル・1 か月 20 ドル（`config.mjs`）に達したら送らない（O4）。
+  - 使っていなかった `features.mjs`、`/api/ai/*`、`app/ai/*` を消した（O7）。
+- トランザクション:
+  - 会話（開始・発話・終了）は、AI の呼び出しをトランザクションの外へ出した。終了時の候補の抽出は、AI のあとで抽出済みかをもう一度確かめてから書く。
+  - 文字の回答は、回答・採点・証拠・計画の完了・混同の記録・診断を 1 つのトランザクションにした。前の「途中で落ちたときの修復処理」は要らなくなったので消した。
+  - 後回しの採点は、応答を返したあとに `next/server` の `after()` で走らせる。同じ回答の二重の採点は、新しい表 `grading_claims`（migration `20261013210000_grading_claims.sql`）で止める（2 分たった取りかけは取り直せる）。
+  - 確認問題の回答と混同ペアの登録も 1 つのトランザクションにした。
+- route（`src/app/api/[name]/route.js`）: どの応答も同じ envelope。`validation_error` は 400、`not_found` は 404、想定外の例外は 500 で `logs/server-errors.log` に 1 行ずつ残す（H9。`logs/` は git に入れない）。
+- 設定: `/api/settings` を消し、RPC `skill_trainer_get_settings_v1` / `skill_trainer_save_settings_v1` にした。設定画面に今日と今月の使用額と上限、モデル名を出す。理由の文言は `labels.js` の `aiReasonLabel` の 1 か所（`limit_reached` を足した）。`useRpc` は `ai_unavailable` を理由の文言にする。
+- RPC 名は、元の skill-trainer と同じ 16 個（`REFERENCE_RPC_NAMES`）と、speak-kit で足した 2 個（`LOCAL_RPC_NAMES`）に分けた。テストは元の 16 個と一致することを確かめる。
+
+確かめたこと:
+
+- `npm test`: 38 件中 38 件が通った。新しいテスト:
+  - 使用額が 1 日の上限に達すると、AI に 1 回も送らず、理由が `limit_reached` になる。設定の RPC も同じ理由を返す。
+  - 設定の RPC は真偽値以外を断り、応答に接続文字列を含めない。
+  - 候補の承認で、YAML と同じ 4 種類の練習問題ができ、採点契約は `rubric:controlled-recall-v2` を指す。
+  - 純粋な関数（答えの正規化、混同の目印、料金、上限の判定）。
+- 実 DB `speak_kit` に `grading_claims` の migration を当てた（`schema_migrations` は 2 本）。`data.mjs check` は間違い 0、`data.mjs sync` は差分 0。
+- `NEXT_DIST_DIR=.next-build npx next build`: 成功。
+- 開発サーバー（3000）: `get_settings_v1`・`get_today_plan_v2`・`quiz_next_v1`・`get_progress_v2` が 200 で `ok`。知らない RPC は 404、`save_settings_v1` に文字列を送ると 400。設定の応答にキーや接続文字列は入っていない。設定画面に「今日の利用額 $0.00 / $2.00」「AI の利用上限 1 日 $2.00・1 か月 $20.00」が出た。
+- 本物の AI で後回しの採点を 1 回通した: 最初の応答は `pending`、3 秒後の同じ送信で `graded`。`ai_usage` に 1 行（入力 1148・出力 86 トークン、0.003156 ドル）、`grading_claims` は 0 行に戻り、採点は 1 件だけ。この確認の回答 1 件は `speak_kit` の記録に残っている。
+
+見送ったもの:
+
+- `repo/*` に SQL を移すこと。読みの SQL（計画・進み具合・クイズ）は、まだ各サービスの中にある。学習者の `'default'` も、読みの SQL には直書きが残る（書く側は文脈の `learnerKey` を使う）。
+- 差分の計算（`planSync`）を DB なしの純粋な関数にすること。
+- 第 2 段で見送った DB の形の変更（`quiz_attempts`・`confusion_events`・会話のターンの列・確認問題の版）。
