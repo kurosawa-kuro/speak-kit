@@ -1,6 +1,10 @@
 # 08 リリース Runbook
 
-クラウドへの配布は、ローカルで Golden Path が通ったあとの別ステップである。①用の Supabase project `speak-kit` は作成済みで、データベースパスワードは `env/secret.yaml` の `supabaseDbPassword` にある。Vercel のトークンと配布用の GitHub トークンは Doppler `apps/dev` に無い。この Runbook は、その手順を今は実行しない。
+自分用のクラウドは 2026-10-13 に立てた（[tasks/05_done/クラウドインフラ対応.md](./tasks/05_done/クラウドインフラ対応.md)）。
+
+- 本番の URL: https://speak-kit.vercel.app （合言葉で守る。ユーザー名は何でもよい。合言葉は `env/secret.yaml` の `speakKitPassword`）
+- Supabase: project `speak-kit`（ref `uhcfeyzwczepyjnqgwoq`、東京 `ap-northeast-1`）。DB のパスワードは `env/secret.yaml` の `supabaseDbPassword`
+- Vercel: project `speak-kit`（関数は東京 `hnd1`）。環境変数は `SPEAK_KIT_DATABASE_KIND`、`SPEAK_KIT_DATABASE_URL`（接続プーラー 6543）、`SPEAK_KIT_PASSWORD`、`ANTHROPIC_API_KEY`。値は Vercel の管理画面（Settings → Environment Variables）で変える。変えたら再デプロイする
 
 ## リリース前
 
@@ -16,9 +20,20 @@ git status --short
 
 ## デプロイ
 
-今のステップはローカル実行である。デプロイコマンドは書かない。
+DB の形を変えたときだけ、先に DB を当てる。そのあと教材の差分を見て反映し、デプロイする。
 
-クラウド手順に入るときの形は、配布型だけである。
+```bash
+make cloud-db                        # sql/migrations のうち未適用のものを Supabase に当てる
+make cloud-data                      # data/ の YAML と Supabase の差分を表示
+sh scripts/cloud.sh data --apply     # 差分を反映
+make cloud-deploy                    # 本番へデプロイ（vercel deploy --prod）
+```
+
+- GitHub への push では自動でデプロイされない。Vercel の GitHub 連携は、Vercel の管理画面で GitHub の Login Connection を足すまで使えない。
+- Vercel のビルドは `next build`（出力先 `.next`）。`vercel.json` で指定している。ローカルの `npm run build` は `.next-build` に出す。
+- アップロードしないもの（`env/secret.yaml`、`.env*`、`logs`）は `.vercelignore` にある。
+
+配布（知人が自分のアカウントで立てる）の形は次のとおりで、まだ手順にしていない。
 
 - 各自が自分の GitHub で clone または fork する。
 - 自分の Vercel、自分の Supabase、任意で自分の Anthropic API キーを使う。
@@ -26,8 +41,6 @@ git status --short
 - `CLOUDFLARE_ACCOUNT_ID` と `CLOUDFLARE_API_TOKEN` でこのアプリを出さない。
 - `INFRA_GITHUB_MEMO_REMOTE_PAT` で配布用リポジトリを作らない。
 - live の `skill-trainer` へ、エンジン、マイグレーション、Retool publish を出さない。
-
-「Deploy with Vercel」と GitHub テンプレート化で手数を減らす、という判断はある。テンプレートの範囲と、動画の手順との一致は未決である。
 
 ## デプロイ後 smoke（Golden Path）
 
@@ -46,7 +59,8 @@ git status --short
 ## ロールバック
 
 - **トリガー**: smoke で Golden Path のいずれかのステップが期待結果に到達しない場合。ローカルなら、その変更を配布手順へ進めない。
-- クラウドの戻し方（前バージョン、データ整合性）は、デプロイ手順を書く段で残す。今は手順が無い。
+- アプリ: Vercel の管理画面の Deployments で前のデプロイを選び、Instant Rollback する。CLI なら `npx vercel rollback`。
+- DB: 当てた migration は戻さない。直すときは新しい migration を足して `make cloud-db` で当てる（当て済みのファイルを書き換えると `db-apply.sh` が止まる）。Supabase の無料プランのバックアップは、管理画面の Database → Backups で確かめる。
 
 ## リリース後タスク
 

@@ -74,6 +74,7 @@
 | [05_done/2026-10-13-commit-and-push.md](05_done/2026-10-13-commit-and-push.md) | 変更を意味のあるメッセージでコミットし、GitHub に送った。`wip` のコミットは書き直さずに送った。コミットメッセージの決まりを `AGENTS.md` と `CLAUDE.md` に足した |
 | [05_done/2026-10-13-talk-ime-enter.md](05_done/2026-10-13-talk-ime-enter.md) | 会話画面と混同ペアの登録欄で、日本語入力の変換を確定する Enter では送信しないようにした。Safari の実機確認は owner に残る |
 | [05_done/実運用可能な状況かをレビュー依頼.md](05_done/実運用可能な状況かをレビュー依頼.md) | ローカルで一人が毎日使えるかのレビュー。R2・R5・R6 と、使い始めてからの H1〜H9 は直した（H の多くはリファクタリングの各段）。R1（バックアップ）・R3（LAN に開いている）・R4（Postgres の自動起動）は owner 判断で見送り。再検討はこのファイルから |
+| [05_done/クラウドインフラ対応.md](05_done/クラウドインフラ対応.md) | 自分用のクラウドを立てた。Supabase を東京で作り直し、DB の形と教材（件数はローカルと同じ）を入れた。Vercel（東京）に合言葉つきで本番を出し、今日の計画・クイズ・記録・AI の採点を本番で確かめた。GitHub 連携は owner の管理画面の操作待ちで、デプロイは `make cloud-deploy` |
 | [05_done/2026-10-13-architecture-refactor-db-first.md](05_done/2026-10-13-architecture-refactor-db-first.md) | 設計レベルのリファクタリング。第 1〜5 段を実施した。バグ 9 件の修正、DB の作り直し（baseline 1 本・教材と学習記録の分離・AI の使用額）、サーバーの層の分離（操作の文脈・AI の利用上限 1 日 2 ドル／1 か月 20 ドル・後回しの採点）、画面の実ルート化（`/today` ほか）、本番ビルドの起動と文書の書き直し。テスト 42 件。R3・R4 は owner 判断で見送り |
 | [05_done/2026-10-13-local-text-golden-path.md](05_done/2026-10-13-local-text-golden-path.md) | 参照元の SQL 28 本と dispatch 16 名をローカル Postgres `speak_kit` へ写し、キー無しの choice 経路を通した |
 | [03_active/refactoring-candidates.md](03_active/refactoring-candidates.md) | 残りのクリーンアップ候補 |
@@ -102,5 +103,5 @@
 ## Notes
 ```
 
-進行中の本作業は無い。クラウド対応（`01_idea/クラウドインフラ対応.md`）は、owner の判断でリファクタリングのあとに回した。クリーンアップ候補は
+進行中の本作業は無い。自分用のクラウド（https://speak-kit.vercel.app 、Vercel と Supabase はどちらも東京）は立てた。残りは Vercel の GitHub 連携（owner の管理画面の操作）と、知人への配布（テンプレート化）である。クリーンアップ候補は
 [03_active/refactoring-candidates.md](03_active/refactoring-candidates.md) で管理する。

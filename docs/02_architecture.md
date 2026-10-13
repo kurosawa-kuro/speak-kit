@@ -1,6 +1,6 @@
 # 02 アーキテクチャ
 
-出典は [英会話アプリ-コミュニティ配布を先に作り次段階へコピーする.md](./英会話アプリ-コミュニティ配布を先に作り次段階へコピーする.md)。製品の形は確定している。アプリはローカルの Postgres で動いている。Vercel、①用 Supabase、配布用 GitHub は別ステップである（[04_workflows.md](./04_workflows.md)、[08_release_runbook.md](./08_release_runbook.md)）。
+出典は [英会話アプリ-コミュニティ配布を先に作り次段階へコピーする.md](./英会話アプリ-コミュニティ配布を先に作り次段階へコピーする.md)。製品の形は確定している。アプリはローカルの Postgres と、自分用のクラウド（Vercel の関数と Supabase の DB。どちらも東京）で動いている。知人への配布は別ステップである（[04_workflows.md](./04_workflows.md)、[08_release_runbook.md](./08_release_runbook.md)）。
 
 今の形は、2026-10-13 のリファクタリング（[tasks/05_done/2026-10-13-architecture-refactor-db-first.md](./tasks/05_done/2026-10-13-architecture-refactor-db-first.md)）で決めた。
 
@@ -35,8 +35,9 @@
 | `src/server/domain/` | 純粋な関数（答えの正規化、混同の目印、回答の見出しの判定、ハッシュ） |
 | `src/cli/data.mjs` | `npm run data:check` / `data:sync` / `data:export` |
 | `sql/migrations/` と `scripts/db-apply.sh` | DB の形。当てたファイルを `public.schema_migrations` に記録する |
-| Supabase（Auth + Postgres） | 配布後の認証と学習記録。ログイン機能は後回し。今のローカルアプリにはログイン画面もセッションも置かない |
-| Vercel | 配布先のデプロイ。別ステップ |
+| `src/middleware.js`・`src/server/http/guard.mjs` | 合言葉（Basic 認証）。`SPEAK_KIT_PASSWORD` があれば全ページと全 API に求める。Vercel の上で未設定なら誰にも開かない |
+| Supabase（Postgres） | クラウドの学習記録。アプリは接続プーラー（トランザクションモード、6543）に表の持ち主でつなぐ。Data API には何も公開しない。Auth（ログイン）は使っていない |
+| Vercel | クラウドの実行環境。関数は東京（`hnd1`）、AI を使う API の実行時間は 60 秒まで（`maxDuration`）。デプロイは `make cloud-deploy` |
 | Claude API | 任意の LLM。クライアントにキーを渡さない |
 
 ## 配置

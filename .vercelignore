@@ -1,0 +1,9 @@
+env/secret.yaml
+env/secret.*.yaml
+.env
+.env.*
+!.env.example
+logs
+.next
+.next-build
+node_modules

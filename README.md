@@ -122,6 +122,18 @@ doppler run -p apps -c dev --only-secrets AI_ANTHROPIC_API_KEY -- \
 
 想定外のエラーは `logs/server-errors.log` に 1 行ずつ残る（git には入れない）。Postgres の自動起動と、LAN から開けないようにすることは、まだ決めていない（`docs/tasks/05_done/実運用可能な状況かをレビュー依頼.md` の R3・R4）。
 
+### クラウド（自分用）
+
+本番は https://speak-kit.vercel.app （Vercel の関数と Supabase の DB は、どちらも東京）。開くと合言葉を聞かれる。ユーザー名は何でもよく、合言葉は `env/secret.yaml` の `speakKitPassword` である。合言葉・DB・AI キーは Vercel の管理画面の Environment Variables で変える。クラウドの学習記録は、ローカルの `speak_kit` とは別である。
+
+```bash
+make cloud-db       # DB の形を Supabase に当てる
+make cloud-data     # 教材の差分を見る（反映は sh scripts/cloud.sh data --apply）
+make cloud-deploy   # 本番へデプロイ
+```
+
+手順と戻し方は [`docs/08_release_runbook.md`](docs/08_release_runbook.md)。
+
 ### 教材の管理
 
 教材（表現・練習問題・クイズ・混同ペア）は [`data/`](data/README.md) の YAML で管理する。書き方は `data/README.md` にある。YAML を直したら、次の順で DB へ反映する。
@@ -149,4 +161,4 @@ npm run data:sync -- --apply    # 反映する
 - [`docs/04_workflows.md`](docs/04_workflows.md) — セットアップ、検証、運用フロー
 - [`docs/07_test_strategy.md`](docs/07_test_strategy.md) — テスト方針
 
-確定した範囲は [`docs/01_requirements.md`](docs/01_requirements.md) から [`docs/08_release_runbook.md`](docs/08_release_runbook.md) にある。未決と、今の作業順の外はアイディアノートに残す。アプリはローカルの Postgres で動いている。Vercel・①用 Supabase・配布用 GitHub は別ステップにする。
+確定した範囲は [`docs/01_requirements.md`](docs/01_requirements.md) から [`docs/08_release_runbook.md`](docs/08_release_runbook.md) にある。未決と、今の作業順の外はアイディアノートに残す。アプリはローカルの Postgres と、自分用のクラウド（Vercel + Supabase、東京）で動いている。知人への配布（テンプレート化）は別ステップにする。

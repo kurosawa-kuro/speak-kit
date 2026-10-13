@@ -1,4 +1,4 @@
-.PHONY: setup dev build start test db data-check data-sync
+.PHONY: setup dev build start test db data-check data-sync cloud-db cloud-data cloud-deploy
 
 # 依存を入れ、DB の形を当て、教材を入れる（何度流しても同じ結果になる）
 setup:
@@ -31,3 +31,13 @@ data-check:
 
 data-sync:
 	npm run data:sync
+
+# クラウド（Supabase 東京 + Vercel）。DB の形を当てる / 教材の差分を見る（反映は sh scripts/cloud.sh data --apply）/ 本番へデプロイ
+cloud-db:
+	sh scripts/cloud.sh db
+
+cloud-data:
+	sh scripts/cloud.sh data
+
+cloud-deploy:
+	sh scripts/cloud.sh deploy

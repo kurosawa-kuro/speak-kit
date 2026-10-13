@@ -31,15 +31,17 @@ localPostgres:
   schema: skill_trainer
   role: job_control_api
 
-# --- Supabase（クラウド手順。SQL はまだ適用しない） ---
+# --- Supabase（東京。2026-10-13 に作り直した。DB の形と教材は当て済み） ---
 supabase:
   projectRef: uhcfeyzwczepyjnqgwoq
   url: https://uhcfeyzwczepyjnqgwoq.supabase.co
   region: ap-northeast-1 # 東京
   compute: nano
 
-# --- Vercel（プロジェクト未作成。GitHub 未接続） ---
+# --- Vercel（project speak-kit。関数は東京 hnd1。GitHub 未接続で、デプロイは make cloud-deploy） ---
 vercel:
   account: kurosawa8122-9989
   team: toshifumi-kurosawas-projects
+  project: speak-kit
+  url: https://speak-kit.vercel.app
   existingProjectNotUsed: vercel-nextjs-starter
