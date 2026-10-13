@@ -61,16 +61,11 @@
 | `.claude/skills/hallucination-check` | 結論前に主張をファイルとコマンドで検証する |
 | `.claude/skills/skeleton-first` | テスト・実装の前にビジネスロジックレスのスケルトンで構造を固定する |
 
-## Backlog
-
-| ファイル | 用途 |
-|---|---|
-| [02_backlog/2026-10-13-local-text-golden-path.md](02_backlog/2026-10-13-local-text-golden-path.md) | 参照元の SQL 28 本と dispatch 16 名をローカル Postgres へ写す。未実行 |
-
 ## Active
 
 | ファイル | 用途 |
 |---|---|
+| [05_done/2026-10-13-local-text-golden-path.md](05_done/2026-10-13-local-text-golden-path.md) | 参照元の SQL 28 本と dispatch 16 名をローカル Postgres `speak_kit` へ写し、キー無しの choice 経路を通した |
 | [03_active/refactoring-candidates.md](03_active/refactoring-candidates.md) | 残りのクリーンアップ候補 |
 
 ## ルール

@@ -1,0 +1,50 @@
+[
+  {
+    "name": "reference_match",
+    "raw": "{\"meaning_match\":\"yes\",\"speech_act_match\":\"yes\",\"comprehensibility\":\"clear\",\"target_pattern_status\":\"used\",\"issues\":[],\"reason\":\"依頼の意味と形が成立\",\"confidence\":0.97}",
+    "expected_success": true,
+    "expected_error_cause": null
+  },
+  {
+    "name": "target_pattern_not_used_despite_clear_communication",
+    "raw": "{\"meaning_match\":\"yes\",\"speech_act_match\":\"yes\",\"comprehensibility\":\"clear\",\"target_pattern_status\":\"not_used\",\"issues\":[],\"reason\":\"意味は通るが対象patternを使えていない\",\"confidence\":0.88}",
+    "expected_success": false,
+    "expected_error_cause": "FORM_SELECTION"
+  },
+  {
+    "name": "semantic_failure",
+    "raw": "{\"meaning_match\":\"no\",\"speech_act_match\":\"yes\",\"comprehensibility\":\"clear\",\"target_pattern_status\":\"used\",\"issues\":[],\"reason\":\"依頼内容が変わっている\",\"confidence\":0.61}",
+    "expected_success": false,
+    "expected_error_cause": "MEANING"
+  },
+  {
+    "name": "intent_failure_wrong_speech_act",
+    "raw": "{\"meaning_match\":\"yes\",\"speech_act_match\":\"no\",\"comprehensibility\":\"clear\",\"target_pattern_status\":\"used\",\"issues\":[],\"reason\":\"依頼ではなく説明文になっている\",\"confidence\":0.7}",
+    "expected_success": false,
+    "expected_error_cause": "INTENT"
+  },
+  {
+    "name": "typo_is_a_minor_issue_and_does_not_retry",
+    "raw": "{\"meaning_match\":\"yes\",\"speech_act_match\":\"yes\",\"comprehensibility\":\"clear\",\"target_pattern_status\":\"used\",\"issues\":[{\"type\":\"TYPO\",\"detail\":\"goint は going のtypo\",\"affects_meaning\":false,\"affects_target_skill\":false}],\"reason\":\"be going to を正しく使えている。goint は going のtypo\",\"confidence\":0.9}",
+    "expected_success": true,
+    "expected_error_cause": null
+  },
+  {
+    "name": "article_choice_is_a_minor_issue_and_does_not_retry",
+    "raw": "{\"meaning_match\":\"yes\",\"speech_act_match\":\"yes\",\"comprehensibility\":\"clear\",\"target_pattern_status\":\"used\",\"issues\":[{\"type\":\"ARTICLE\",\"detail\":\"a file/the fileは文脈依存で意味差は軽微\",\"affects_meaning\":false,\"affects_target_skill\":false}],\"reason\":\"依頼は成立。冠詞選択は文脈依存で軽微\",\"confidence\":0.85}",
+    "expected_success": true,
+    "expected_error_cause": null
+  },
+  {
+    "name": "unnatural_collocation_with_target_not_used_retries_on_target_not_form",
+    "raw": "{\"meaning_match\":\"yes\",\"speech_act_match\":\"yes\",\"comprehensibility\":\"clear\",\"target_pattern_status\":\"not_used\",\"issues\":[{\"type\":\"COLLOCATION\",\"detail\":\"go lunch は have lunch / go to lunch が自然\",\"affects_meaning\":false,\"affects_target_skill\":true}],\"reason\":\"誘う意図は成立。ただしWould you like to...?を使っておらず、go lunchも不自然\",\"confidence\":0.82}",
+    "expected_success": false,
+    "expected_error_cause": "FORM_SELECTION"
+  },
+  {
+    "name": "minor_form_note_with_target_used_still_passes",
+    "raw": "{\"meaning_match\":\"yes\",\"speech_act_match\":\"yes\",\"comprehensibility\":\"clear\",\"target_pattern_status\":\"used\",\"issues\":[{\"type\":\"WORD_ORDER\",\"detail\":\"語順が少し不自然\",\"affects_meaning\":false,\"affects_target_skill\":true}],\"reason\":\"対象の言い方は使えていて、意味も通る\",\"confidence\":0.8}",
+    "expected_success": true,
+    "expected_error_cause": null
+  }
+]

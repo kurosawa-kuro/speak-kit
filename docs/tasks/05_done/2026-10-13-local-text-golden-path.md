@@ -4,8 +4,8 @@
 
 - Class: Heavy
 - Reason: 参照元の schema 28 本と dispatch 16 本を、名前と挙動ごと写す。適用先は speak-kit 専用のローカル Postgres だけであり、live の `DB_FLOW_URL` には触らない。
-- Limits: 実行は owner が「開始」と言うまでしない。live DB、secret 書き込み、Vercel、配布用 GitHub、Doppler への書き込みは 0。
-- Owner approval required: yes
+- Limits: live DB、secret 書き込み、Vercel、配布用 GitHub、Doppler への書き込みは 0。
+- Owner approval required: yes。2026-10-13、owner が着手チェックのあと `03_active` への移動を指示した。
 
 ## Goal
 
@@ -118,7 +118,19 @@ Done の 1〜4 のどれかが失敗した変更は、その時点でローカ�
 - その実行中に Anthropic へ出ていないことの確認
 - 16 route 名の一覧と、参照元 `dispatch` の match との差分が空であること
 
-承認前の今は未実行である。未実行を完了条件の代わりにしない。
+着手チェック（2026-10-13）:
+
+- `response_mode=choice` は `skill_trainer_quiz.rs` の `answer` に入り、`call_grader` を呼ばない。
+- 28 本は、空の Postgres にはそのまま乗らない。1 本目は role `job_control_api` が必要。`20261012010000` は `public.flow_schema_migrations` が必要。どちらもこの SQL 群は作らない。
+- その role と ledger テーブルは、speak-kit 専用ローカル Postgres の中にだけ作る。live の `job_control_api` と `DB_FLOW_URL` は使わない。
+- Supabase の使用上限と、Vercel の GitHub 未接続は、このローカル適用の着手を止めない。
+
+実装と観測（2026-10-13）:
+
+- SQL 28 本を `speak-kit/sql/postgres/` へコピーし、`psql -d speak_kit` で時刻順に適用した。ログは `APPLIED 28`。`current_database()` は `speak_kit`。適用コマンドは `DB_FLOW_URL` を使っていない。`flow` には接続していない。空の DB に足したのは、この DB 内の `public.flow_schema_migrations` だけである。role `job_control_api` はクラスタに既にあったので、この DB の中では作っていない。
+- `ANTHROPIC_API_KEY` を unset にして `node --test test/*.test.mjs` は 3 件成功。`get_today_plan_v2` は `ok` で plan 3 件、`quiz_next_v1` は出題、`submit_attempt_v2` の choice は `ok`、`get_progress_v2` は skill 50 件。`lib/` に Anthropic と ai-gateway の URL は無い。
+- HTTP でも同じ 4 呼び出しが 200 で成功した。16 名は `test/names.test.mjs` が参照元 `dispatch` の match と一致した。空の body では各 route が 404 にならず、検証エラーか成功応答を返した。Talk と free_text は `ai_unavailable` を即返す。
+- 画面は `http://localhost:3000/` の「今日の分を進める」で today / quiz / choice / progress がすべて `true ok`。音声の route と UI は無い。learner は `default` 固定。
 
 ## Plan
 
