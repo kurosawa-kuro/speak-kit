@@ -44,6 +44,7 @@ target/
 dist/
 build/
 .next/
+.next-build/
 .nuxt/
 .svelte-kit/
 out/
