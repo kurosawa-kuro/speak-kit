@@ -74,4 +74,27 @@
 
 ## Evidence
 
-push 後の `git status -sb` と `git log --oneline -5` は、この節の下に追記する。
+`git push origin main`（HTTPS）は、この環境に GitHub のログイン情報が無く失敗した（`could not read Username`）。SSH の鍵は通るので、同じリポジトリへ SSH の URL で送った（`origin` の設定は変えていない。force なし）。
+
+```text
+$ git push git@github.com:kurosawa-kuro/speak-kit.git main:main
+   b1baf64..411e5f6  main -> main
+$ git status -sb
+## main...origin/main
+$ git log --oneline -5
+411e5f6 コミットメッセージの決まりを足し、R2・R5・R6 のタスク台帳とレビュー依頼を更新した
+374e793 npm test を毎回作り直すテスト用 DB speak_kit_test に向け、本物の学習記録を汚さないようにした
+fbcc0ca 会話画面と混同ペア登録で、日本語入力の変換を確定する Enter では送信しないようにした
+65f9329 wip
+b1baf64 wip
+$ git ls-tree --name-only origin/main data/
+data/README.md
+data/confusion_pairs.yaml
+data/expressions
+```
+
+このあと、この Evidence の追記を 1 コミットにして同じ方法で送った。
+
+## 残ること
+
+- HTTPS の `git push origin main` は、この Mac では GitHub のログイン情報が無いため通らない。SSH の URL で送るか、`origin` を SSH の URL に変えるかは owner が決める。
