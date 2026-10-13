@@ -11,6 +11,7 @@ export async function logError(where, error) {
     stack: error?.stack?.split("\n").slice(0, 6).join("\n"),
   })
   console.error(`[speak-kit] ${where}: ${error?.message ?? error}`)
+  if (!config.errorLog) return
   try {
     await mkdir(dirname(config.errorLog), { recursive: true })
     await appendFile(config.errorLog, `${line}\n`)

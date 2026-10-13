@@ -33,9 +33,9 @@ localPostgres:
 
 # --- Supabase（クラウド手順。SQL はまだ適用しない） ---
 supabase:
-  projectRef: xfbiyoqhdfsacmsbbafr
-  url: https://xfbiyoqhdfsacmsbbafr.supabase.co
-  region: south-asia-mumbai
+  projectRef: uhcfeyzwczepyjnqgwoq
+  url: https://uhcfeyzwczepyjnqgwoq.supabase.co
+  region: ap-northeast-1 # 東京
   compute: nano
 
 # --- Vercel（プロジェクト未作成。GitHub 未接続） ---

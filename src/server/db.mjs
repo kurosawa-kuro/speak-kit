@@ -3,7 +3,11 @@ import { config } from "./config.mjs"
 
 const { Pool } = pg
 
-export const pool = new Pool({ connectionString: config.database.url, max: config.database.poolMax })
+export const pool = new Pool({
+  connectionString: config.database.url,
+  ssl: config.database.ssl,
+  max: config.database.poolMax,
+})
 
 export async function query(text, params) {
   return pool.query(text, params)

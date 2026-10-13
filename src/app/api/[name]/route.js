@@ -4,6 +4,8 @@ import { envelope } from "../../../server/http/envelope.mjs"
 import { logError } from "../../../server/http/errors.mjs"
 
 export const dynamic = "force-dynamic"
+// AI は 1 回 20 秒で打ち切る。採点の後回し（after）もこの時間に含まれる。
+export const maxDuration = 60
 
 const STATUS = { validation_error: 400, not_found: 404 }
 

@@ -2,10 +2,12 @@
 # sql/migrations/ の SQL を、まだ当てていないものだけ名前順に当てる。
 # 当てた記録（名前とチェックサム）は public.schema_migrations に残す。当て済みのファイルが書き換わっていたら止まる。
 # 使い方: sh scripts/db-apply.sh <DB 名>   （speak_kit / speak_kit_test / speak_kit_next など speak_kit で始まる名前だけ）
+#         sh scripts/db-apply.sh <Supabase の接続文字列>   （パスワードは PGPASSWORD で渡す。ポート 5432 のセッションモード）
 set -eu
 DB="${1:?DB 名を指定してください}"
 case "$DB" in
   speak_kit*) ;;
+  postgresql://*.pooler.supabase.com:5432/postgres*) ;;
   *) echo "speak_kit で始まらない DB には当てません: $DB" >&2; exit 1 ;;
 esac
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

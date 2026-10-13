@@ -2,38 +2,50 @@ import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
 // 環境変数を読むのはこのファイルだけ。CLI・テスト・設定画面の「起動時の設定」もここから読む。
+// 例外は src/middleware.js（Edge で動くので、このファイルを import できない）。
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..")
 const DEFAULT_DATABASE_URL = "postgresql://kurosawa@localhost:5432/speak_kit"
-const ALLOWED_DATABASES = ["speak_kit", "speak_kit_test"]
+const LOCAL_DATABASES = ["speak_kit", "speak_kit_test"]
 
 function databaseConfig() {
   const url = process.env.SPEAK_KIT_DATABASE_URL || DEFAULT_DATABASE_URL
   const parsed = new URL(url)
   const name = parsed.pathname.replace(/^\//, "")
-  if (!ALLOWED_DATABASES.includes(name)) {
-    throw new Error(`speak-kit database must be ${ALLOWED_DATABASES.join(" or ")}, got ${name || "(none)"}`)
-  }
   const kind = process.env.SPEAK_KIT_DATABASE_KIND || "local"
-  if (!["local", "supabase"].includes(kind)) throw new Error(`SPEAK_KIT_DATABASE_KIND must be local or supabase, got ${kind}`)
+  if (kind === "local") {
+    if (!LOCAL_DATABASES.includes(name)) {
+      throw new Error(`speak-kit database must be ${LOCAL_DATABASES.join(" or ")}, got ${name || "(none)"}`)
+    }
+  } else if (kind === "supabase") {
+    if (name !== "postgres" || !/\.supabase\.(com|co)$/.test(parsed.hostname)) {
+      throw new Error(`supabase database must be postgres on a supabase host, got ${name || "(none)"} on ${parsed.hostname}`)
+    }
+  } else {
+    throw new Error(`SPEAK_KIT_DATABASE_KIND must be local or supabase, got ${kind}`)
+  }
   return {
     url,
     name,
     host: parsed.hostname,
     port: Number(parsed.port || 5432),
     kind,
-    poolMax: Number(process.env.SPEAK_KIT_DATABASE_POOL_MAX || 10),
+    // Supabase の接続プーラーの証明書は公開の認証局で検証できないので、暗号化だけを求める。
+    ssl: kind === "supabase" ? { rejectUnauthorized: false } : undefined,
+    // Vercel の関数は数が増えるので、1 つあたりの接続を少なくする。
+    poolMax: Number(process.env.SPEAK_KIT_DATABASE_POOL_MAX || (kind === "supabase" ? 3 : 10)),
   }
 }
 
 export const config = Object.freeze({
   root: ROOT,
   dataDir: process.env.SPEAK_KIT_DATA_DIR || join(ROOT, "data"),
-  errorLog: process.env.SPEAK_KIT_ERROR_LOG || join(ROOT, "logs", "server-errors.log"),
+  // Vercel ではファイルに書けないので、関数のログ（console）だけに残す。
+  errorLog: process.env.VERCEL ? null : process.env.SPEAK_KIT_ERROR_LOG || join(ROOT, "logs", "server-errors.log"),
   learnerKey: "default",
   domainCode: "english_conversation",
   timeZone: "Asia/Tokyo",
-  login: "disabled",
+  login: process.env.SPEAK_KIT_PASSWORD ? "password" : "disabled",
   database: databaseConfig(),
   ai: Object.freeze({
     url: "https://api.anthropic.com/v1/messages",

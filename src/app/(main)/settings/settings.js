@@ -76,7 +76,7 @@ export function Settings() {
 
       <section className="rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-2">
         <h3 className="pt-2 text-sm font-semibold text-neutral-200">起動時の設定（ここでは変えられません）</h3>
-        <Row label="ログイン">{startup.login === "disabled" ? "無効（一人で使用）" : "有効"}</Row>
+        <Row label="ログイン">{startup.login === "password" ? "合言葉（一人で使用）" : "無効（一人で使用）"}</Row>
         <Row label="保存先">
           {startup.database.kind === "local" ? `ローカル DB（${startup.database.name}）` : startup.database.name}
         </Row>
