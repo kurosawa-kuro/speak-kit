@@ -6,18 +6,21 @@ import { Today } from "./screens/today"
 import { Train } from "./screens/train"
 import { Talk } from "./screens/talk"
 import { Records } from "./screens/records"
+import { Settings } from "./screens/settings"
 
 const TABS = [
   { label: "今日", to: "/today" },
   { label: "練習", to: "/train" },
   { label: "会話", to: "/talk" },
   { label: "記録", to: "/progress" },
+  { label: "設定", to: "/settings" },
 ]
 
 function isActiveTab(pathname, to) {
   if (to === "/today") return pathname === "/" || pathname === "/today"
   if (to === "/talk") return pathname.startsWith("/talk")
   if (to === "/progress") return pathname.startsWith("/progress")
+  if (to === "/settings") return pathname.startsWith("/settings")
   return pathname.startsWith("/train")
 }
 
@@ -41,7 +44,7 @@ export function Shell() {
               </span>
               <h1 className="whitespace-nowrap text-lg font-bold text-neutral-100">英会話学習</h1>
             </div>
-            <nav className="grid grid-cols-4 gap-1 rounded-full border border-neutral-800 bg-neutral-950 p-1 lg:ml-auto lg:flex" aria-label="ページタブ">
+            <nav className="grid grid-cols-5 gap-1 rounded-full border border-neutral-800 bg-neutral-950 p-1 lg:ml-auto lg:flex" aria-label="ページタブ">
               {TABS.map((tab) => {
                 const active = isActiveTab(pathname, tab.to)
                 return (
@@ -66,6 +69,7 @@ export function Shell() {
           {pathname === "/train" ? <Train /> : null}
           {pathname === "/talk" ? <Talk /> : null}
           {pathname === "/progress" ? <Records /> : null}
+          {pathname === "/settings" ? <Settings /> : null}
         </main>
       </div>
     </NavContext.Provider>

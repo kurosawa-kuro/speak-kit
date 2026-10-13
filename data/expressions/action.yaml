@@ -1,0 +1,576 @@
+# 表現の教材。書き方は data/README.md。key と code は一度決めたら変えない。
+- key: REQUEST_COULD_YOU
+  code: P1-025
+  form: Could you {verb_phrase}?
+  meaning: 相手に丁寧に行動を依頼する
+  intent: REQUEST
+  tier: CORE
+  kind: pattern
+  example:
+    en: Could you send me the file?
+    ja: ファイルを送ってもらえますか？
+  contrast_drill: true
+  extra_examples:
+    - key: REQ-001
+      en: Could you send me the file?
+      ja: ファイルを送ってもらえますか？
+      difficulty: 1
+      rubric: controlled-recall-v1
+    - key: REQ-002
+      en: Could you check this part?
+      ja: この部分を確認してもらえますか？
+      difficulty: 1
+      rubric: controlled-recall-v1
+    - key: REQ-003
+      en: Could you explain that again?
+      ja: もう一度説明してもらえますか？
+      rubric: controlled-recall-v1
+  quiz:
+    meaning:
+      near:
+        - ファイルを送ってもいいですか？
+        - ファイルを送りましたか？
+        - ファイルを送るつもりですか？
+    intent:
+      correct: Could you ...?
+      near:
+        - Could I ...?
+        - Would you like to ...?
+        - Did you ...?
+    form:
+      near:
+        - Could I send you the file?
+        - Did you send me the file?
+        - Would you like to send me the file?
+  status: active
+- key: CHUNK_FEEL_BETTER
+  code: P1-048
+  form: feel better
+  meaning: 気分・体調が良くなる
+  intent: FEELING
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: feel better
+    ja: 気分・体調が良くなる
+  quiz:
+    meaning:
+      near:
+        - 気分が悪くなる
+        - 疲れを感じる
+        - 楽しむ
+    form:
+      near:
+        - feel good
+        - feel gooder
+        - become better
+  status: active
+- key: CHUNK_FEEL_GOOD
+  code: P1-049
+  form: feel good
+  meaning: 気分がいい
+  intent: FEELING
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: feel good
+    ja: 気分がいい
+  quiz:
+    meaning:
+      near:
+        - 気分が悪い
+        - 疲れを感じる
+        - 楽しむ
+    form:
+      near:
+        - feel better
+        - feel goodly
+        - have good
+  status: active
+- key: CHUNK_FEEL_LIKE
+  code: P1-050
+  form: feel like {noun_or_verb_ing}
+  meaning: 何かをしたい気分を述べる
+  intent: DESIRE
+  tier: TIER1
+  kind: pattern
+  example:
+    en: feel like pizza
+    ja: ピザが食べたい気分
+  quiz:
+    meaning:
+      near:
+        - ピザが好き
+        - ピザのような感じ
+        - ピザを食べた
+    form:
+      near:
+        - like pizza
+        - feel pizza
+        - want like pizza
+  status: active
+- key: CHUNK_FEEL_TIRED
+  code: P1-047
+  form: feel tired
+  meaning: 疲れを感じる
+  intent: FEELING
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: feel tired
+    ja: 疲れを感じる
+  quiz:
+    meaning:
+      near:
+        - 気分がいい
+        - 眠りたい
+        - 退屈だ
+    form:
+      near:
+        - feel tiring
+        - have tired
+        - be tiring
+  status: active
+- key: CHUNK_GET_BETTER
+  code: P1-033
+  form: get better
+  meaning: 良くなる
+  intent: STATE_CHANGE
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: get better
+    ja: 良くなる
+  quiz:
+    meaning:
+      near:
+        - 気分がいい
+        - 準備する
+        - うまくいかない
+    form:
+      near:
+        - feel good
+        - get good
+        - be best
+  status: active
+- key: CHUNK_GET_HOME
+  code: P1-031
+  form: get home
+  meaning: 家に着く
+  intent: DAILY_LIFE
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: get home
+    ja: 帰宅する
+  quiz:
+    meaning:
+      correct: 家に着く
+      near:
+        - 帰る
+        - 家にいる
+        - 家を出る
+    form:
+      prompt: 家に着く
+      near:
+        - go home
+        - get to home
+        - reach to home
+  status: active
+- key: CHUNK_GET_READY
+  code: P1-034
+  form: get ready
+  meaning: 準備する
+  intent: DAILY_LIFE
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: get ready
+    ja: 準備する
+  quiz:
+    meaning:
+      near:
+        - 出かける
+        - 休憩する
+        - 急ぐ
+    form:
+      near:
+        - make ready
+        - do ready
+        - get readied
+  status: active
+- key: CHUNK_GET_TIRED
+  code: P1-032
+  form: get tired
+  meaning: 疲れる
+  intent: STATE_CHANGE
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: get tired
+    ja: 疲れる
+  quiz:
+    meaning:
+      near:
+        - 退屈する
+        - 休憩する
+        - 良くなる
+    form:
+      near:
+        - feel tiring
+        - get tiring
+        - become tiring
+  status: active
+- key: CHUNK_GO_HOME
+  code: P1-043
+  form: go home
+  meaning: 帰る
+  intent: DAILY_LIFE
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: go home
+    ja: 帰る
+  quiz:
+    meaning:
+      near:
+        - 家に着く
+        - 家にいる
+        - 出かける
+    form:
+      near:
+        - get home
+        - go to home
+        - return to home
+  status: active
+- key: CHUNK_GO_OUT
+  code: P1-045
+  form: go out
+  meaning: 出かける
+  intent: DAILY_LIFE
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: go out
+    ja: 出かける
+  quiz:
+    meaning:
+      near:
+        - 帰る
+        - 外にいる
+        - 家に着く
+    form:
+      near:
+        - get out
+        - go to out
+        - go home
+  status: active
+- key: CHUNK_GO_SHOPPING
+  code: P1-044
+  form: go shopping
+  meaning: 買い物に行く
+  intent: DAILY_LIFE
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: go shopping
+    ja: 買い物に行く
+  quiz:
+    meaning:
+      near:
+        - 買い物をした
+        - 店で働く
+        - 店を開く
+    form:
+      near:
+        - go to shopping
+        - go shop
+        - go for shopped
+  status: active
+- key: CHUNK_GO_WRONG
+  code: P1-046
+  form: go wrong
+  meaning: うまくいかない
+  intent: PROBLEM
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: go wrong
+    ja: うまくいかない
+  quiz:
+    meaning:
+      near:
+        - 道に迷う
+        - うまくいく
+        - 遅れる
+    form:
+      near:
+        - go bad
+        - get wrong
+        - do wrong
+  status: active
+- key: CHUNK_HAVE_BREAKFAST
+  code: P1-039
+  form: have breakfast
+  meaning: 朝食をとる
+  intent: DAILY_LIFE
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: have breakfast
+    ja: 朝食を食べる
+  quiz:
+    meaning:
+      correct: 朝食をとる
+      near:
+        - 朝食を作る
+        - 朝食がある
+        - 昼食をとる
+    form:
+      prompt: 朝食をとる
+      near:
+        - have a breakfast
+        - make breakfast
+        - do breakfast
+  status: active
+- key: CHUNK_HAVE_FUN
+  code: P1-041
+  form: have fun
+  meaning: 楽しむ
+  intent: ENJOYMENT
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: have fun
+    ja: 楽しむ
+  quiz:
+    meaning:
+      near:
+        - 面白い
+        - 楽しみにする
+        - 冗談を言う
+    form:
+      near:
+        - have funny
+        - do fun
+        - make fun
+  status: active
+- key: CHUNK_HAVE_PROBLEM
+  code: P1-042
+  form: have a problem
+  meaning: 問題がある
+  intent: PROBLEM
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: have a problem
+    ja: 問題がある
+  quiz:
+    meaning:
+      near:
+        - 問題を解く
+        - 問題を出す
+        - 心配する
+    form:
+      near:
+        - make a problem
+        - do a problem
+        - take a problem
+  status: active
+- key: CHUNK_HAVE_TIME
+  code: P1-040
+  form: have time
+  meaning: 時間がある
+  intent: AVAILABILITY
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: have time
+    ja: 時間がある
+  quiz:
+    meaning:
+      near:
+        - 時間がかかる
+        - 時間を守る
+        - 何時ですか
+    form:
+      near:
+        - take time
+        - have the hour
+        - spend time
+  status: active
+- key: CHUNK_TAKE_BREAK
+  code: P1-036
+  form: take a break
+  meaning: 休憩する
+  intent: DAILY_LIFE
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: take a break
+    ja: 休憩する
+  quiz:
+    meaning:
+      near:
+        - 壊す
+        - 寝る
+        - 仕事を終える
+    form:
+      near:
+        - make a break
+        - do a break
+        - take a broken
+  status: active
+- key: CHUNK_TAKE_BUS
+  code: P1-037
+  form: take a bus
+  meaning: バスに乗る
+  intent: TRANSPORT
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: take a bus
+    ja: バスに乗る
+  quiz:
+    meaning:
+      near:
+        - バスを運転する
+        - バスを待つ
+        - バスを降りる
+    form:
+      near:
+        - take on a bus
+        - make a bus
+        - do a bus
+  status: active
+- key: CHUNK_TAKE_MEDICINE
+  code: P1-038
+  form: take medicine
+  meaning: 薬を飲む
+  intent: DAILY_LIFE
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: take medicine
+    ja: 薬を飲む
+  quiz:
+    meaning:
+      near:
+        - 薬を買う
+        - 薬を作る
+        - 病院に行く
+    form:
+      near:
+        - drink medicine
+        - eat medicine
+        - have a medicine
+  status: active
+- key: CHUNK_TAKE_SHOWER
+  code: P1-035
+  form: take a shower
+  meaning: シャワーを浴びる
+  intent: DAILY_LIFE
+  tier: TIER1
+  kind: atomic_chunk
+  example:
+    en: take a shower
+    ja: シャワーを浴びる
+  quiz:
+    meaning:
+      near:
+        - 風呂に入る
+        - シャワーを直す
+        - 顔を洗う
+    form:
+      near:
+        - take a bath
+        - bathe a shower
+        - do a shower
+  status: active
+- key: INVITATION_WOULD_YOU_LIKE
+  code: P1-026
+  form: Would you like to {verb_phrase}?
+  meaning: 丁寧に誘う
+  intent: INVITATION
+  tier: CORE
+  kind: pattern
+  example:
+    en: Would you like to grab lunch?
+    ja: 一緒にランチに行きませんか？
+  contrast_drill: true
+  quiz:
+    meaning:
+      near:
+        - ランチに行ってもいいですか？
+        - ランチを取ってきてもらえますか？
+        - ランチに行きましたか？
+    intent:
+      correct: Would you like to ...?
+      near:
+        - Could you ...?
+        - Could I ...?
+        - Did you ...?
+    form:
+      near:
+        - Could I grab lunch?
+        - Could you grab lunch?
+        - Did you grab lunch?
+  status: active
+- key: PERMISSION_COULD_I
+  code: P1-024
+  form: Could I {verb_phrase}?
+  meaning: 丁寧に許可を求める
+  intent: PERMISSION
+  tier: CORE
+  kind: pattern
+  example:
+    en: Could I ask you something?
+    ja: 何か聞いてもいいですか？
+  contrast_drill: true
+  quiz:
+    meaning:
+      near:
+        - 何か聞いてもらえますか？
+        - 何か聞きましたか？
+        - 何を聞きたいですか？
+    intent:
+      correct: Could I ...?
+      near:
+        - Could you ...?
+        - Would you like to ...?
+        - Do you ...?
+    form:
+      near:
+        - Could you ask me something?
+        - Did I ask you something?
+        - Would you like to ask something?
+  status: active
+- key: SUGGESTION_HOW_ABOUT
+  code: P1-027
+  form: How about {proposal}?
+  meaning: 候補を提案する
+  intent: SUGGESTION
+  tier: CORE
+  kind: pattern
+  example:
+    en: How about next Monday?
+    ja: 来週の月曜はどう？
+  contrast_drill: true
+  quiz:
+    meaning:
+      near:
+        - 来週の月曜はどうだった？
+        - 来週の月曜に何をする？
+        - 来週の月曜は空いてない。
+    intent:
+      correct: How about ...?
+      near:
+        - How about you?
+        - Could you ...?
+        - Did you ...?
+    form:
+      near:
+        - How was next Monday?
+        - How about last Monday?
+        - Are you next Monday?
+  status: active

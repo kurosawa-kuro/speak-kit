@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto"
 import { envelope, validationError } from "./envelope.mjs"
 import { query } from "./db.mjs"
 import { hashParts } from "./hash.mjs"
-import { aiEnabled } from "./ai/isEnabled.mjs"
+import { aiAvailability } from "./ai/isEnabled.mjs"
 import { duePractice } from "./boundary.mjs"
 import { loadPolicy } from "./learning.mjs"
 
@@ -68,7 +68,7 @@ export async function getPractice(request) {
   const domainId = domain.rows[0]?.id
   if (!domainId) return validationError("unknown domain_code")
   if (code === ENGLISH) {
-    const confusionPractice = await duePractice(aiEnabled())
+    const confusionPractice = await duePractice(await aiAvailability())
     if (confusionPractice) return envelope(true, "ok", confusionPractice, null)
   }
   const policyVersion = (await loadPolicy()).version
@@ -175,6 +175,6 @@ export async function getPractice(request) {
       expectedReference: definition.reference,
       modality: definition.modality,
     },
-    aiAvailable: aiEnabled(),
+    ...(await aiAvailability()),
   }, null)
 }

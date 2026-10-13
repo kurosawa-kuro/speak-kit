@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "start": "next start -p 3000",
-    "test": "node --test src/test/*.test.mjs"
+    "test": "node --test src/test/*.test.mjs",
+    "data:check": "node src/cli/data.mjs check",
+    "data:sync": "node src/cli/data.mjs sync",
+    "data:export": "node src/cli/data.mjs export"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.3",
@@ -14,6 +17,7 @@
     "postcss": "^8.5.30",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.3",
+    "yaml": "^2.9.1"
   }
 }

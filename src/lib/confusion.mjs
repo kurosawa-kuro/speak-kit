@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { askClaude } from "./ai/client.mjs"
-import { aiEnabled } from "./ai/isEnabled.mjs"
+import { aiGate, askClaude } from "./ai/client.mjs"
 import { envelope, validationError } from "./envelope.mjs"
 import { query, withTransaction } from "./db.mjs"
 import { folded, loadPair, pairNotice } from "./boundary.mjs"
@@ -48,7 +47,8 @@ function parseDraft(raw) {
 }
 
 async function discriminationDraft(labelA, labelB) {
-  if (!aiEnabled()) return { error: "ANTHROPIC_API_KEY is unset" }
+  const blocked = await aiGate()
+  if (blocked) return { error: blocked.error.message }
   const asked = await askClaude(
     "あなたは二つの似た候補の境界だけを作る。共通点や長い解説は書かない。JSONだけを返す。",
     `候補A: ${labelA}\n候補B: ${labelB}\nAとBを取り違えないための最小の識別を、それぞれ一語か短い句で返す。確認問題はA用2問、B用2問。4問は別の文脈にする。同じ文の言い換えにしない。期待する回答は、その候補を使った短い完成文か、候補そのものの名称。`,

@@ -26,8 +26,9 @@
 | Next.js（React） | 画面。テキストのみ。音声入出力は作らない | 未着手 |
 | Next.js API Routes（コア） | テキストのフレーズ練習、学習記録・お気に入り。利用者は一人 | 未着手。AI クライアントを import しない |
 | Next.js API Routes（AI） | 自由対話、文法／自然さフィードバック、シナリオ生成 | 任意。コアのあと |
-| `lib/ai/isEnabled.ts`（例） | `hasAnthropicKey` の単一算出点。サーバーは `aiEnabled: boolean` だけを返す | パスは着手時。算出点は 1 箇所 |
-| `lib/ai/client.ts`（例） | キーが無いときは `null` | 同上 |
+| `src/lib/ai/isEnabled.mjs` | `aiStatus()` / `aiEnabled()` の単一算出点。設定（`learner_settings.ai_enabled`）とキー有無を合わせて決める。サーバーはキーの値を返さない | 算出点は 1 箇所 |
+| `src/lib/settings.mjs` | 設定の読み書き（`skill_trainer.learner_settings`）。画面は「設定」タブ、API は `/api/settings` | 参照元に無い、speak-kit 独自の表 |
+| `src/lib/ai/client.mjs` | キーが無いときはモデルを呼ばずに `ai_unavailable` を返す | 同上 |
 | Supabase（Auth + Postgres） | 配布後の認証と学習記録。ログイン機能は後回し | 製品の保存先。①用 project は作成済み。今のローカルアプリにはログイン画面もセッションも置かない |
 | Vercel | 配布先のデプロイ | 別ステップ |
 | Claude API | 任意の LLM。クライアントにキーを渡さない | 未設定が既定 |
@@ -36,11 +37,19 @@
 | タスク文書 | 一回性の作業計画・実装タスク | `docs/tasks/` |
 | Claude skills | Claude Code で繰り返し使う作業手順 | `.claude/skills/` |
 
+## 配置
+
+- コード（アプリとテスト）は `src/` に置く。`src/app/`（Next.js App Router の画面と API route）、`src/lib/`（サーバ側の処理）、`src/test/`（`node --test`。fixture は `src/test/fixtures/`）。
+- スキーマは `sql/postgres/`、運用スクリプトは `scripts/` に置く。
+- Rust は置かない。
+
 ## 参照元
 
-実装時の参照元アプリは `/Users/kurosawa/Dev/private-ops/apps/skill-trainer`（crate 名 `skill-trainer`、lib 名 `skill_trainer`）である。新しい挙動を発明せず、ここにあるものを限りなくコピーする。
+実装時の参照元アプリは `/Users/kurosawa/Dev/private-ops/apps/skill-trainer`（crate 名 `skill-trainer`、lib 名 `skill_trainer`）である。ここにあるものを土台にし、そこから改良する（2026-10-13 owner。それまでは新しい挙動を発明せず限りなくコピーする方針だった）。
 
-| 参照元 | 扱い |
+下の表のパスは、参照元 repo（`private-ops/apps/skill-trainer/`）の中のパスである。speak-kit の `src/` ではない。
+
+| 参照元の中のパス | 扱い |
 |---|---|
 | `sql/postgres/*.sql` | スキーマと seed をコピーする。適用先は live の `DB_FLOW_URL` ではない |
 | `src/domains/english_conversation.rs` | プロンプト、固定文、カテゴリ文言をコピーする。Rust のモジュールとしては置かない |
@@ -68,10 +77,10 @@ Rust API を crate 依存、`local-api-host` 経由、sqlx のままでは載せ
 
 - LLM 呼び出しはサーバー側 proxy のみ。クライアントに API キーを渡さない。
 - コア機能の API route は AI クライアントを import しない。AI 機能は別エンドポイントに隔離する。
-- キー有無は 1 箇所だけを参照する。クライアントにキーの有無を直接晒さない。
+- 設定とキー有無は 1 箇所だけを参照する。クライアントにキーの値を晒さない。設定がオフなら Anthropic へ接続しない。
 - AI 呼び出しは try/catch に置く。失敗時は構造化エラーを返し、プロセスとリクエストは落とさない。
 - UI は Error Boundary で AI セクションを囲む。粒度（機能ごとか、セクション全体か）は未決。
-- `aiEnabled` を起動時に固定するか、リクエストごとに再評価するかは未決。
+- `aiEnabled` はリクエストごとに設定を DB から読んで再評価する（2026-10-13、設定画面）。キーが無いときは DB を読まずに false を返す。
 - 各インスタンスは利用者一人のプライベートアプリである。公開範囲（誰が使えるか）は一人に閉じる。目的は AI キーの悪用防止である。
 - 配布は各自の GitHub・Vercel・Supabase・任意の Anthropic キー。黒澤名義の鍵に相手の利用量を載せない。
 - 非機密の設定は `env/config.yaml`。ローカル秘密情報は `env/secret.yaml`（コミットしない）。

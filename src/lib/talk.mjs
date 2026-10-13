@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { askClaude } from "./ai/client.mjs"
-import { aiEnabled } from "./ai/isEnabled.mjs"
+import { aiAvailability } from "./ai/isEnabled.mjs"
 import { normalizeAnswer } from "./ai/grade.mjs"
 import { envelope } from "./envelope.mjs"
 import { hashParts } from "./hash.mjs"
@@ -195,7 +195,7 @@ export async function startTalkSession(request, domainId) {
     assistantTurnIndex: 0,
     assistantMessage: opening,
     apiVersion: "adaptive-talk-v2",
-    aiAvailable: aiEnabled(),
+    ...(await aiAvailability()),
   }, null)
 }
 
@@ -253,7 +253,7 @@ export async function sendTalkMessage(request) {
         classification: existing.dimensions ? classificationFrom(existing.dimensions) : null,
         attributedSkillKeys: skills.rows.map((row) => row.stable_key),
         evidenceIds: evidence.rows.map((row) => row.evidence_id),
-        aiAvailable: aiEnabled(),
+        ...(await aiAvailability()),
       }, null)
     }
     const session = await client.query(
@@ -382,7 +382,7 @@ export async function sendTalkMessage(request) {
       classification: classificationFrom(dimensions),
       attributedSkillKeys: matched.rows.map((item) => item.stable_key),
       evidenceIds,
-      aiAvailable: aiEnabled(),
+      ...(await aiAvailability()),
     }, null)
   })
 }

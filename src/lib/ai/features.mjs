@@ -1,5 +1,4 @@
-import { askClaude, unavailable } from "./client.mjs"
-import { aiEnabled } from "./isEnabled.mjs"
+import { aiGate, askClaude } from "./client.mjs"
 import { OPENING_FALLBACK, PERSONAS, TURN_FALLBACK } from "./prompts.mjs"
 
 function text(value) {
@@ -18,7 +17,8 @@ function parseJson(raw) {
 }
 
 export async function talk(request) {
-  if (!aiEnabled()) return unavailable()
+  const blocked = await aiGate()
+  if (blocked) return blocked
   const scenario = text(request?.scenario)
   const persona = PERSONAS[scenario]
   if (!persona) {
@@ -42,7 +42,8 @@ export async function talk(request) {
 }
 
 export async function feedback(request) {
-  if (!aiEnabled()) return unavailable()
+  const blocked = await aiGate()
+  if (blocked) return blocked
   const sentence = text(request?.text)
   if (!sentence) {
     return { ok: false, code: "validation_error", data: {}, error: { message: "text is required" } }
@@ -67,7 +68,8 @@ export async function feedback(request) {
 }
 
 export async function scenario() {
-  if (!aiEnabled()) return unavailable()
+  const blocked = await aiGate()
+  if (blocked) return blocked
   const asked = await askClaude(
     "あなたはPhase 1の英会話教材を1場面だけ作ります。自己紹介、質問、時間、依頼、聞き返しのどれかです。JSON以外は出力しないでください。",
     '{"situation":"日本語で1文の場面","opener":"相手の最初の英語1〜2文"}',

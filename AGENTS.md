@@ -14,7 +14,7 @@ Codex は作業前にこのファイルを読むため、ここには repo 共�
 - 配布: 各自のアカウント。黒澤名義の課金・鍵・DB に相手の利用量を載せない。単一ホスト型は不採用
 - 次段階: `speak-kit` ができてから、このリポジトリをコピーして `speak-next` を切る。今は切らない。コピー後の変更は `speak-kit` へ戻さない
 - live: 毎日の学習は private-ops 内 `skill-trainer` に残す。障害修正以外、エンジン・マイグレーション・Retool publish を live に出さない。live の学習者データベースへ書かない
-- 参照元: `/Users/kurosawa/Dev/private-ops/apps/skill-trainer`。挙動・SQL・ドメイン文言は限りなくコピーする。Rust API は Next.js API Routes へ書き直す。crate、Retool、ローカル Postgres、`DB_FLOW_URL` は実行基盤にしない
+- 参照元: `/Users/kurosawa/Dev/private-ops/apps/skill-trainer`。挙動・SQL・ドメイン文言を土台にし、そこから改良する（2026-10-13 owner）。Rust API は Next.js API Routes へ書き直す。crate、Retool、ローカル Postgres、`DB_FLOW_URL` は実行基盤にしない
 - 作業順の外: 談話訓練、新しい Phase 番号、Phase 1 Gate の変更、Skill / Exercise の登録
 
 アプリ本体は未着手。`make` の各ターゲットは足場で、中身は未記入。
@@ -33,7 +33,7 @@ make fmt      # フォーマット
 - 既存のコード・命名・パターンに合わせる。新規導入より既存の再利用を優先する。
 - 変更後はテストとフォーマッタを実行してから完了とする。
 - 非機密の設定値は `env/config.yaml`、ローカル秘密情報は `env/secret.yaml`、チーム共有は Doppler (`doppler.yaml`)。秘密情報をコミットしない。配布先の Supabase と任意の Anthropic キーは、各自の Vercel / Supabase に置く。クライアントに API キーを渡さない。
-- コアの API route は AI クライアントを import しない。キー有無は 1 箇所で算出し、クライアントへは `aiEnabled: boolean` だけを返す。401 / 429 / 5xx / timeout でコア機能を落とさない。
+- コアの API route は AI クライアントを import しない。AI を使えるかは設定とキー有無から 1 箇所で算出し、クライアントへキーの値は返さない。設定がオフなら Anthropic へ接続しない。401 / 429 / 5xx / timeout でコア機能を落とさない。
 - アイディアノートを実装指示にしない。正本へ昇格するときは、変更案と実行 task に分ける。
 
 ## ドキュメント

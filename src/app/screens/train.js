@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useRpc } from "../ui/use-rpc"
 import { useNav } from "../ui/nav"
 import { QuickQuiz } from "./quiz"
-import { capabilityLabel, purposeLabel, reasonLabel, trainingModeLabel, uiErrorMessage } from "../ui/labels"
+import { aiReasonLabel, capabilityLabel, purposeLabel, reasonLabel, trainingModeLabel, uiErrorMessage } from "../ui/labels"
 
 const modes = [
   { value: "controlled_recall", label: trainingModeLabel("controlled_recall") },
@@ -127,6 +127,7 @@ export function Train() {
   const skillLabel = incomingProbe ? "混同している二つを分ける" : planMode ? activePlanItem?.skillLabel : practice.data?.skill?.meaning
   const boundary = plan.data?.dueConfusion ?? practice.data?.confusion ?? notices.find((notice) => notice.difference)?.difference ?? null
   const aiAvailable = planMode ? plan.data?.aiAvailable ?? true : practice.data?.aiAvailable ?? true
+  const aiReason = planMode ? plan.data?.aiReason : practice.data?.aiReason
   const busy = plan.loading || practice.loading || submit.loading
   const error = submit.error ?? (planMode ? plan.error : practice.error)
 
@@ -274,7 +275,7 @@ export function Train() {
         <div className="flex items-start gap-3 rounded-xl border border-amber-800/60 bg-amber-950/30 px-4 py-3">
           <span className="text-amber-400">⚠</span>
           <p className="text-sm text-amber-200">
-            AI機能が現在利用できません。決定論的に正解と一致する回答はそのまま判定されますが、
+            {aiReasonLabel(aiReason)}決定論的に正解と一致する回答はそのまま判定されますが、
             一致しない回答はAI採点待ち（確認できませんでした）のままになります。
           </p>
         </div>

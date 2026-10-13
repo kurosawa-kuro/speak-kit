@@ -1,0 +1,146 @@
+# 表現の教材。書き方は data/README.md。key と code は一度決めたら変えない。
+- key: TIME_EXPERIENCE_HAVE_BEEN
+  code: P1-023
+  form: I have been to {place}.
+  meaning: 訪問経験を述べる
+  intent: EXPERIENCE
+  tier: CORE
+  kind: pattern
+  example:
+    en: I've been to Kyoto.
+    ja: 京都に行ったことがある。
+  contrast_drill: true
+  quiz:
+    meaning:
+      near:
+        - 京都に行く予定だ。
+        - 京都に住んでいる。
+        - 京都に行ったことはある？
+    intent:
+      correct: I have been to ...
+      near:
+        - Have you ever ...?
+        - I ... yesterday.
+        - I am going to ...
+    form:
+      near:
+        - I went to Kyoto.
+        - I've gone to Kyoto.
+        - I'm going to Kyoto.
+  status: active
+- key: TIME_FUTURE_GOING_TO
+  code: P1-022
+  form: I am going to {verb_phrase}.
+  meaning: 予定を述べる
+  intent: FUTURE
+  tier: CORE
+  kind: pattern
+  example:
+    en: I'm going to travel next month.
+    ja: 来月旅行する予定。
+  contrast_drill: true
+  quiz:
+    meaning:
+      near:
+        - 先月旅行した。
+        - 来月旅行したい。
+        - 今旅行している。
+    intent:
+      correct: I am going to ...
+      near:
+        - I am ...ing now.
+        - I want to ...
+        - I ... yesterday.
+    form:
+      near:
+        - I traveled next month.
+        - I'm traveling now.
+        - I want to travel next month.
+  status: active
+- key: TIME_PAST_YESTERDAY
+  code: P1-020
+  form: I {past_action} yesterday.
+  meaning: 過去の出来事を述べる
+  intent: PAST
+  tier: CORE
+  kind: pattern
+  example:
+    en: I watched a movie yesterday.
+    ja: 昨日映画を見た。
+  contrast_drill: true
+  quiz:
+    meaning:
+      near:
+        - 昨日映画を見る予定だった。
+        - 普段映画を見る。
+        - 昨日映画を見ていない。
+    intent:
+      correct: I ... yesterday.
+      near:
+        - I usually ...
+        - I am going to ...
+        - I have been to ...
+    form:
+      near:
+        - I watch a movie yesterday.
+        - I have watched a movie yesterday.
+        - I was watch a movie yesterday.
+  status: active
+- key: TIME_PRESENT_PROGRESSIVE_NOW
+  code: P1-021
+  form: I am {verb_ing} now.
+  meaning: 今していることを述べる
+  intent: NOW
+  tier: CORE
+  kind: pattern
+  example:
+    en: I'm working now.
+    ja: 今仕事をしている。
+  contrast_drill: true
+  quiz:
+    meaning:
+      near:
+        - 普段仕事をしている。
+        - 今から仕事をする予定。
+        - 今仕事が終わった。
+    intent:
+      correct: I am ...ing now.
+      near:
+        - I usually ...
+        - I am going to ...
+        - I ... yesterday.
+    form:
+      near:
+        - I work now.
+        - I worked now.
+        - I'm going to work now.
+  status: active
+- key: TIME_USUALLY
+  code: P1-019
+  form: I usually {verb_phrase}.
+  meaning: 習慣を述べる
+  intent: USUAL
+  tier: CORE
+  kind: pattern
+  example:
+    en: I usually wake up at 7.
+    ja: 普段は7時に起きる。
+  contrast_drill: true
+  quiz:
+    meaning:
+      near:
+        - 今日は7時に起きた。
+        - 7時に起きる予定。
+        - 昔は7時に起きていた。
+    intent:
+      correct: I usually ...
+      near:
+        - I am ...ing now.
+        - I ... yesterday.
+        - I used to ..., but now ...
+    form:
+      near:
+        - I'm usually waking up at 7.
+        - I woke up at 7.
+        - I used to wake up at 7.
+  status: active

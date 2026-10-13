@@ -1,19 +1,27 @@
-import { aiEnabled } from "./isEnabled.mjs"
+import { AI_REASON_MESSAGES, aiStatus, hasAnthropicKey } from "./isEnabled.mjs"
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
 const TIMEOUT_MS = 20000
 
-export function unavailable() {
+export function unavailable(reason = "key_missing") {
   return {
     ok: false,
     code: "ai_unavailable",
-    data: { aiEnabled: false },
-    error: { message: "ANTHROPIC_API_KEY is unset" },
+    data: { aiEnabled: false, aiReason: reason },
+    error: { message: AI_REASON_MESSAGES[reason] },
   }
 }
 
+/** AI を使えないときは unavailable() を、使えるときは null を返す。 */
+export async function aiGate() {
+  if (!hasAnthropicKey()) return unavailable("key_missing")
+  const status = await aiStatus()
+  return status.aiEnabled ? null : unavailable(status.reason)
+}
+
 export async function askClaude(system, user, options = {}) {
-  if (!aiEnabled()) return unavailable()
+  const blocked = await aiGate()
+  if (blocked) return blocked
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), options.timeoutMs || TIMEOUT_MS)
   try {

@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react"
 import { useRpc } from "../ui/use-rpc"
-import { uiErrorMessage } from "../ui/labels"
+import { aiReasonLabel, uiErrorMessage } from "../ui/labels"
 
 const SCENARIOS = [
   { value: "teacher", label: "講師と話す", description: "英語教師が簡単な英語で助けながら会話を進める" },
@@ -32,6 +32,7 @@ export function Talk() {
   const [input, setInput] = useState("")
   const [summary, setSummary] = useState(null)
   const [aiAvailable, setAiAvailable] = useState(true)
+  const [aiReason, setAiReason] = useState(null)
   const [reviewed, setReviewed] = useState({})
 
   const sessionIdRef = useRef("")
@@ -45,6 +46,7 @@ export function Talk() {
         setConversationSessionId(res.conversationSessionId)
         setMessages([{ turnIndex: res.assistantTurnIndex, role: "assistant", content: res.assistantMessage }])
         setAiAvailable(res.aiAvailable)
+        setAiReason(res.aiReason ?? null)
         focusAtRef.current = Date.now()
       }
     })
@@ -66,6 +68,7 @@ export function Talk() {
       if (res) {
         setMessages((prev) => [...prev, { turnIndex: res.assistantTurnIndex, role: "assistant", content: res.assistantMessage }])
         setAiAvailable(res.aiAvailable)
+        setAiReason(res.aiReason ?? null)
         focusAtRef.current = Date.now()
       }
     })
@@ -155,7 +158,7 @@ export function Talk() {
             <div className="flex items-start gap-3 rounded-xl border border-amber-800/60 bg-amber-950/30 px-4 py-3">
               <span className="text-amber-400">⚠</span>
               <p className="text-sm text-amber-200">
-                AI機能が現在利用できません。会話は続けられますが、固定の返答になり、発話内容への
+                {aiReasonLabel(aiReason)}会話は続けられますが、固定の返答になり、発話内容への
                 フィードバックは行われません。
               </p>
             </div>

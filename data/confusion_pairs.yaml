@@ -1,0 +1,1696 @@
+# 混同ペアの教材。書き方は data/README.md。id は一度決めたら変えない。学習の状態（取り違えた回数など）は DB にあり、ここには書かない。
+- id: 11111111-1111-4111-8111-000000000010
+  type: DIRECTION
+  a:
+    label: because
+    skill_key: REASON_BECAUSE
+    key: 理由を後ろに足す
+    direction: 結果のあと
+  b:
+    label: that's why
+    skill_key: CAUSE_THATS_WHY
+    key: 結果を後ろに出す
+    direction: 理由のあと
+  source: observed_mistake
+  probes:
+    - id: 11111111-1111-4111-8111-000000000001
+      side: a
+      prompt: 雨だったので家にいました。
+      answer: I stayed home because it was raining.
+      quiz:
+        key: QZ-CS-0001
+        pair: I stayed home. That's why it was raining.
+        near:
+          - It was raining because I stayed home.
+          - I stayed home so it was raining.
+    - id: 11111111-1111-4111-8111-000000000003
+      side: a
+      prompt: 電車に遅れたので遅刻しました。
+      answer: I was late because I missed the train.
+      quiz:
+        key: QZ-CS-0003
+        pair: I was late. That's why I missed the train.
+        near:
+          - I missed the train because I was late.
+          - I was late so I missed the train.
+    - id: 11111111-1111-4111-8111-000000000002
+      side: b
+      prompt: 雨でした。だから家にいました。
+      answer: It was raining. That's why I stayed home.
+      quiz:
+        key: QZ-CS-0002
+        pair: It was raining because I stayed home.
+        near:
+          - I stayed home. That's why it was raining.
+          - It was raining. That's because I stayed home.
+    - id: 11111111-1111-4111-8111-000000000004
+      side: b
+      prompt: 電車に遅れました。だから遅刻しました。
+      answer: I missed the train. That's why I was late.
+      quiz:
+        key: QZ-CS-0004
+        pair: I missed the train because I was late.
+        near:
+          - I was late. That's why I missed the train.
+          - I missed the train. That's because I was late.
+- id: 11111111-1111-4111-8111-000000000020
+  type: TIME
+  a:
+    label: Did you ...?
+    skill_key: QUESTION_PAST_DID
+    key: その時した？
+    direction: 特定の過去
+  b:
+    label: Have you ever ...?
+    skill_key: QUESTION_EXPERIENCE_HAVE_EVER
+    key: 経験ある？
+    direction: 経験の有無
+  probes:
+    - id: 11111111-1111-4111-8111-000000000021
+      side: a
+      prompt: 昨日、東京に行きましたか。
+      answer: Did you go to Tokyo yesterday?
+      quiz:
+        key: QZ-CS-0021
+        pair: Have you ever been to Tokyo yesterday?
+        near:
+          - Do you go to Tokyo yesterday?
+          - Are you going to Tokyo yesterday?
+    - id: 11111111-1111-4111-8111-000000000023
+      side: a
+      prompt: 今朝、コーヒーを飲みましたか。
+      answer: Did you drink coffee this morning?
+      quiz:
+        key: QZ-CS-0023
+        pair: Have you ever drunk coffee this morning?
+        near:
+          - Do you drink coffee this morning?
+          - Are you drinking coffee this morning?
+    - id: 11111111-1111-4111-8111-000000000022
+      side: b
+      prompt: 東京に行ったことはありますか。
+      answer: Have you ever been to Tokyo?
+      quiz:
+        key: QZ-CS-0022
+        pair: Did you go to Tokyo?
+        near:
+          - Do you go to Tokyo?
+          - Are you going to Tokyo?
+    - id: 11111111-1111-4111-8111-000000000024
+      side: b
+      prompt: 寿司を食べたことはありますか。
+      answer: Have you ever eaten sushi?
+      quiz:
+        key: QZ-CS-0024
+        pair: Did you eat sushi?
+        near:
+          - Do you eat sushi?
+          - Are you eating sushi?
+- id: 11111111-1111-4111-8111-000000000030
+  type: MEANING
+  a:
+    label: Did you say ...?
+    key: 発言の確認
+    direction: 言った言葉
+  b:
+    label: Do you mean ...?
+    skill_key: MEANING_CONFIRMATION
+    key: 意味の確認
+    direction: 意図した内容
+  probes:
+    - id: 11111111-1111-4111-8111-000000000031
+      side: a
+      prompt: 今、「明日」と言いましたか。
+      answer: Did you say tomorrow?
+      quiz:
+        key: QZ-CS-0031
+        pair: Do you mean tomorrow?
+        near:
+          - Does that mean tomorrow?
+          - Do you say tomorrow?
+    - id: 11111111-1111-4111-8111-000000000033
+      side: a
+      prompt: 今、「3時」と言いましたか。
+      answer: Did you say three o'clock?
+      quiz:
+        key: QZ-CS-0033
+        pair: Do you mean three o'clock?
+        near:
+          - Does that mean three o'clock?
+          - Do you say three o'clock?
+    - id: 11111111-1111-4111-8111-000000000032
+      side: b
+      prompt: 明日という意味ですか。
+      answer: Do you mean tomorrow?
+      quiz:
+        key: QZ-CS-0032
+        pair: Did you say tomorrow?
+        near:
+          - Are you saying tomorrow?
+          - Do you say tomorrow?
+    - id: 11111111-1111-4111-8111-000000000034
+      side: b
+      prompt: 3時という意味ですか。
+      answer: Do you mean three o'clock?
+      quiz:
+        key: QZ-CS-0034
+        pair: Did you say three o'clock?
+        near:
+          - Are you saying three o'clock?
+          - Do you say three o'clock?
+- id: 11111111-1111-4111-8111-000000000040
+  type: INTENT
+  a:
+    label: Do you mean ...?
+    skill_key: MEANING_CONFIRMATION
+    key: あなたの意図
+    direction: 人
+  b:
+    label: Does that mean ...?
+    key: そこから導かれる意味
+    direction: 内容
+  probes:
+    - id: 11111111-1111-4111-8111-000000000041
+      side: a
+      prompt: 行きたくない、ということですか。
+      answer: Do you mean you don't want to go?
+      quiz:
+        key: QZ-CS-0041
+        pair: Does that mean you don't want to go?
+        near:
+          - Did you say you don't want to go?
+          - Do you mean you didn't want to go?
+    - id: 11111111-1111-4111-8111-000000000043
+      side: a
+      prompt: 忙しい、ということですか。
+      answer: Do you mean you are busy?
+      quiz:
+        key: QZ-CS-0043
+        pair: Does that mean you are busy?
+        near:
+          - Did you say you are busy?
+          - Do you mean you were busy?
+    - id: 11111111-1111-4111-8111-000000000042
+      side: b
+      prompt: それは、行かなくていいということですか。
+      answer: Does that mean I don't have to go?
+      quiz:
+        key: QZ-CS-0042
+        pair: Do you mean I don't have to go?
+        near:
+          - Does that mean I must not go?
+          - Does that mean you don't have to go?
+    - id: 11111111-1111-4111-8111-000000000044
+      side: b
+      prompt: それは、今日は無理ということですか。
+      answer: Does that mean today is impossible?
+      quiz:
+        key: QZ-CS-0044
+        pair: Do you mean today is impossible?
+        near:
+          - Does that mean today was impossible?
+          - Did you say today is impossible?
+- id: 11111111-1111-4111-8111-000000000050
+  type: INTENT
+  a:
+    label: Are you asking me to ...?
+    key: 今の発言は依頼？
+    direction: 発言の意図
+  b:
+    label: Do you want me to ...?
+    key: してほしい？
+    direction: 希望
+  probes:
+    - id: 11111111-1111-4111-8111-000000000051
+      side: a
+      prompt: 今の発言は、資料を送ってほしい依頼ですか。
+      answer: Are you asking me to send the file?
+      quiz:
+        key: QZ-CS-0051
+        pair: Do you want me to send the file?
+        near:
+          - Are you saying that I sent the file?
+          - Can I send the file?
+    - id: 11111111-1111-4111-8111-000000000053
+      side: a
+      prompt: 今の発言は、ここに残ってほしい依頼ですか。
+      answer: Are you asking me to stay here?
+      quiz:
+        key: QZ-CS-0053
+        pair: Do you want me to stay here?
+        near:
+          - Are you saying that I stayed here?
+          - Can I stay here?
+    - id: 11111111-1111-4111-8111-000000000052
+      side: b
+      prompt: 資料を送ってほしいですか。
+      answer: Do you want me to send the file?
+      quiz:
+        key: QZ-CS-0052
+        pair: Are you asking me to send the file?
+        near:
+          - Do you want to send the file?
+          - Could you send the file?
+    - id: 11111111-1111-4111-8111-000000000054
+      side: b
+      prompt: ここに残ってほしいですか。
+      answer: Do you want me to stay here?
+      quiz:
+        key: QZ-CS-0054
+        pair: Are you asking me to stay here?
+        near:
+          - Do you want to stay here?
+          - Could you stay here?
+- id: 11111111-1111-4111-8111-000000000060
+  type: SUBJECT
+  a:
+    label: Could you give me a moment?
+    key: 私が時間をもらう
+    direction: 自分
+  b:
+    label: Could you wait a moment?
+    key: あなたが待つ
+    direction: 相手
+  probes:
+    - id: 11111111-1111-4111-8111-000000000061
+      side: a
+      prompt: 少し時間をもらえますか。
+      answer: Could you give me a moment?
+      quiz:
+        key: QZ-CS-0061
+        pair: Could you wait a moment?
+        near:
+          - Can I give you a moment?
+          - Could I wait a moment?
+    - id: 11111111-1111-4111-8111-000000000063
+      side: a
+      prompt: 考える時間がほしいです。
+      answer: Could you give me a moment to think?
+      quiz:
+        key: QZ-CS-0063
+        pair: Could you wait a moment to think?
+        near:
+          - Can I give you a moment to think?
+          - Could you think for a moment?
+    - id: 11111111-1111-4111-8111-000000000062
+      side: b
+      prompt: 少し待ってもらえますか。
+      answer: Could you wait a moment?
+      quiz:
+        key: QZ-CS-0062
+        pair: Could you give me a moment?
+        near:
+          - Can I wait a moment?
+          - Could I wait a moment?
+    - id: 11111111-1111-4111-8111-000000000064
+      side: b
+      prompt: ここで待っていてもらえますか。
+      answer: Could you wait a moment here?
+      quiz:
+        key: QZ-CS-0064
+        pair: Could you give me a moment here?
+        near:
+          - Can I wait here a moment?
+          - Could I wait a moment here?
+- id: 11111111-1111-4111-8111-000000000070
+  type: SUBJECT
+  a:
+    label: Can I ...?
+    skill_key: PERMISSION_COULD_I
+    key: 私がしていい？
+    direction: 自分
+  b:
+    label: Could you ...?
+    skill_key: REQUEST_COULD_YOU
+    key: あなたにしてほしい
+    direction: 相手
+  probes:
+    - id: 11111111-1111-4111-8111-000000000071
+      side: a
+      prompt: 窓を開けてもいいですか。
+      answer: Can I open the window?
+      quiz:
+        key: QZ-CS-0071
+        pair: Could you open the window?
+        near:
+          - Can you open the window?
+          - Did you open the window?
+    - id: 11111111-1111-4111-8111-000000000073
+      side: a
+      prompt: これを確認してもいいですか。
+      answer: Could I check this?
+      quiz:
+        key: QZ-CS-0073
+        pair: Could you check this?
+        near:
+          - Can you check this?
+          - Did I check this?
+    - id: 11111111-1111-4111-8111-000000000072
+      side: b
+      prompt: 窓を開けてもらえますか。
+      answer: Could you open the window?
+      quiz:
+        key: QZ-CS-0072
+        pair: Can I open the window?
+        near:
+          - Could I open the window?
+          - Did you open the window?
+    - id: 11111111-1111-4111-8111-000000000074
+      side: b
+      prompt: これを確認してもらえますか。
+      answer: Could you check this?
+      quiz:
+        key: QZ-CS-0074
+        pair: Can I check this?
+        near:
+          - Could I check this?
+          - Did you check this?
+- id: 11111111-1111-4111-8111-000000000080
+  type: TIME
+  a:
+    label: Are you ...ing?
+    key: 今
+    direction: 進行
+  b:
+    label: Do you ...?
+    skill_key: QUESTION_PRESENT_DO
+    key: 普段
+    direction: 習慣
+  probes:
+    - id: 11111111-1111-4111-8111-000000000081
+      side: a
+      prompt: 今、コーヒーを飲んでいますか。
+      answer: Are you drinking coffee now?
+      quiz:
+        key: QZ-CS-0081
+        pair: Do you drink coffee now?
+        near:
+          - Did you drink coffee now?
+          - Have you ever drunk coffee now?
+    - id: 11111111-1111-4111-8111-000000000083
+      side: a
+      prompt: 今、英語を勉強していますか。
+      answer: Are you studying English now?
+      quiz:
+        key: QZ-CS-0083
+        pair: Do you study English now?
+        near:
+          - Did you study English now?
+          - Are you going to study English now?
+    - id: 11111111-1111-4111-8111-000000000082
+      side: b
+      prompt: 普段、コーヒーを飲みますか。
+      answer: Do you drink coffee?
+      quiz:
+        key: QZ-CS-0082
+        pair: Are you drinking coffee?
+        near:
+          - Did you drink coffee?
+          - Have you ever drunk coffee?
+    - id: 11111111-1111-4111-8111-000000000084
+      side: b
+      prompt: 普段、英語を勉強しますか。
+      answer: Do you study English?
+      quiz:
+        key: QZ-CS-0084
+        pair: Are you studying English?
+        near:
+          - Did you study English?
+          - Have you ever studied English?
+- id: 11111111-1111-4111-8111-000000000090
+  type: INTENT
+  a:
+    label: What do you mean?
+    key: あなたの意図
+    direction: 人
+  b:
+    label: What does that mean?
+    skill_key: MEANING_CLARIFICATION
+    key: その言葉の意味
+    direction: 内容
+  probes:
+    - id: 11111111-1111-4111-8111-000000000091
+      side: a
+      prompt: あなたはどういう意味で言いましたか。
+      answer: What do you mean?
+      quiz:
+        key: QZ-CS-0091
+        pair: What does that mean?
+        near:
+          - What did you say?
+          - What do you say?
+    - id: 11111111-1111-4111-8111-000000000093
+      side: a
+      prompt: 「大丈夫」は、あなたのどういう意味ですか。
+      answer: What do you mean by fine?
+      quiz:
+        key: QZ-CS-0093
+        pair: What does fine mean?
+        near:
+          - What did you say by fine?
+          - How do you say fine?
+    - id: 11111111-1111-4111-8111-000000000092
+      side: b
+      prompt: その言葉はどういう意味ですか。
+      answer: What does that mean?
+      quiz:
+        key: QZ-CS-0092
+        pair: What do you mean?
+        near:
+          - What did you say?
+          - How do you say that?
+    - id: 11111111-1111-4111-8111-000000000094
+      side: b
+      prompt: 「fine」という言葉の意味は何ですか。
+      answer: What does that mean?
+      quiz:
+        key: QZ-CS-0094
+        pair: What do you mean?
+        near:
+          - How do you say that?
+          - What did you say?
+- id: 11111111-1111-4111-8111-0000000000a0
+  type: MEANING
+  a:
+    label: So, you mean ...?
+    key: 意味・意図
+    direction: 意図
+  b:
+    label: So, you're saying ...?
+    key: 発言内容
+    direction: 発言
+  probes:
+    - id: 11111111-1111-4111-8111-0000000000a1
+      side: a
+      prompt: つまり、明日という意味ですか。
+      answer: So, you mean tomorrow?
+      quiz:
+        key: QZ-CS-00a1
+        pair: So, you're saying tomorrow?
+        near:
+          - So, did you say tomorrow?
+          - So, are you asking tomorrow?
+    - id: 11111111-1111-4111-8111-0000000000a3
+      side: a
+      prompt: つまり、行かないという意味ですか。
+      answer: So, you mean you will not go?
+      quiz:
+        key: QZ-CS-00a3
+        pair: So, you're saying you will not go?
+        near:
+          - So, you mean you did not go?
+          - So, did you say you will not go?
+    - id: 11111111-1111-4111-8111-0000000000a2
+      side: b
+      prompt: つまり、明日と言っているのですか。
+      answer: So, you're saying tomorrow?
+      quiz:
+        key: QZ-CS-00a2
+        pair: So, you mean tomorrow?
+        near:
+          - So, you're asking tomorrow?
+          - So, does that mean tomorrow?
+    - id: 11111111-1111-4111-8111-0000000000a4
+      side: b
+      prompt: つまり、行かないと言っているのですか。
+      answer: So, you're saying you will not go?
+      quiz:
+        key: QZ-CS-00a4
+        pair: So, you mean you will not go?
+        near:
+          - So, you're saying you did not go?
+          - So, you're asking me not to go?
+- id: 11111111-1111-4111-8111-0000000000b0
+  type: INTENT
+  a:
+    label: Are you asking me to ...?
+    key: 今の発言は依頼？
+    direction: 依頼
+  b:
+    label: Are you saying that ...?
+    key: 主張？
+    direction: 主張
+  probes:
+    - id: 11111111-1111-4111-8111-0000000000b1
+      side: a
+      prompt: 今の発言は、残ってほしい依頼ですか。
+      answer: Are you asking me to stay?
+      quiz:
+        key: QZ-CS-00b1
+        pair: Are you saying that I should stay?
+        near:
+          - Do you want to stay?
+          - Can I stay?
+    - id: 11111111-1111-4111-8111-0000000000b3
+      side: a
+      prompt: 今の発言は、送ってほしい依頼ですか。
+      answer: Are you asking me to send it?
+      quiz:
+        key: QZ-CS-00b3
+        pair: Are you saying that I should send it?
+        near:
+          - Do you want to send it?
+          - Can I send it?
+    - id: 11111111-1111-4111-8111-0000000000b2
+      side: b
+      prompt: 残るべきだ、という主張ですか。
+      answer: Are you saying that I should stay?
+      quiz:
+        key: QZ-CS-00b2
+        pair: Are you asking me to stay?
+        near:
+          - Are you saying that you should stay?
+          - Are you saying that I stayed?
+    - id: 11111111-1111-4111-8111-0000000000b4
+      side: b
+      prompt: 送るべきだ、という主張ですか。
+      answer: Are you saying that I should send it?
+      quiz:
+        key: QZ-CS-00b4
+        pair: Are you asking me to send it?
+        near:
+          - Are you saying that you should send it?
+          - Are you saying that I sent it?
+- id: 11111111-1111-4111-8111-0000000000c0
+  type: MEANING
+  a:
+    label: Are you referring to ...?
+    key: 何を指しているか
+    direction: 指示
+  b:
+    label: Are you talking about ...?
+    key: 話題
+    direction: 話題
+  probes:
+    - id: 11111111-1111-4111-8111-0000000000c1
+      side: a
+      prompt: 今の「それ」は、この資料を指していますか。
+      answer: Are you referring to this file?
+      quiz:
+        key: QZ-CS-00c1
+        pair: Are you talking about this file?
+        near:
+          - Are you looking at this file?
+          - Did you refer to this file?
+    - id: 11111111-1111-4111-8111-0000000000c3
+      side: a
+      prompt: 今の「彼」は、田中さんを指していますか。
+      answer: Are you referring to Tanaka?
+      quiz:
+        key: QZ-CS-00c3
+        pair: Are you talking about Tanaka?
+        near:
+          - Are you talking to Tanaka?
+          - Did you refer to Tanaka?
+    - id: 11111111-1111-4111-8111-0000000000c2
+      side: b
+      prompt: 話題は、この資料ですか。
+      answer: Are you talking about this file?
+      quiz:
+        key: QZ-CS-00c2
+        pair: Are you referring to this file?
+        near:
+          - Are you talking to this file?
+          - Are you looking at this file?
+    - id: 11111111-1111-4111-8111-0000000000c4
+      side: b
+      prompt: 話題は、田中さんですか。
+      answer: Are you talking about Tanaka?
+      quiz:
+        key: QZ-CS-00c4
+        pair: Are you referring to Tanaka?
+        near:
+          - Are you talking to Tanaka?
+          - Did you talk about Tanaka?
+- id: 11111111-1111-4111-8111-0000000000d0
+  type: INTENT
+  a:
+    label: Could you explain that again?
+    key: もう一度説明する
+    direction: 説明
+  b:
+    label: Could you say that again?
+    skill_key: REPEAT_REQUEST
+    key: もう一度言う
+    direction: 発言
+  probes:
+    - id: 11111111-1111-4111-8111-0000000000d1
+      side: a
+      prompt: もう一度、説明してもらえますか。
+      answer: Could you explain that again?
+      quiz:
+        key: QZ-CS-00d1
+        pair: Could you say that again?
+        near:
+          - Can I explain that again?
+          - Could you explain that?
+    - id: 11111111-1111-4111-8111-0000000000d3
+      side: a
+      prompt: その手順を、もう一度説明してください。
+      answer: Could you explain that again?
+      quiz:
+        key: QZ-CS-00d3
+        pair: Could you say that again?
+        near:
+          - Could you show me that again?
+          - Can I explain that again?
+    - id: 11111111-1111-4111-8111-0000000000d2
+      side: b
+      prompt: もう一度、言ってもらえますか。
+      answer: Could you say that again?
+      quiz:
+        key: QZ-CS-00d2
+        pair: Could you explain that again?
+        near:
+          - Can I say that again?
+          - Could you tell that again?
+    - id: 11111111-1111-4111-8111-0000000000d4
+      side: b
+      prompt: その数字を、もう一度言ってください。
+      answer: Could you say that again?
+      quiz:
+        key: QZ-CS-00d4
+        pair: Could you explain that again?
+        near:
+          - Could you tell that again?
+          - Can I say that again?
+- id: 11111111-1111-4111-8111-0000000000e0
+  type: INTENT
+  a:
+    label: Could you be more specific?
+    key: もっと具体的に
+    direction: 具体
+  b:
+    label: Could you explain ...?
+    key: 説明して
+    direction: 説明
+  probes:
+    - id: 11111111-1111-4111-8111-0000000000e1
+      side: a
+      prompt: もっと具体的に言ってもらえますか。
+      answer: Could you be more specific?
+      quiz:
+        key: QZ-CS-00e1
+        pair: Could you explain it?
+        near:
+          - Could you say that again?
+          - Could you give me an example?
+    - id: 11111111-1111-4111-8111-0000000000e3
+      side: a
+      prompt: どの部分か、もっと具体的に教えてください。
+      answer: Could you be more specific?
+      quiz:
+        key: QZ-CS-00e3
+        pair: Could you explain the part?
+        near:
+          - Could you show me the part?
+          - Could you say that again?
+    - id: 11111111-1111-4111-8111-0000000000e2
+      side: b
+      prompt: その計画を説明してもらえますか。
+      answer: Could you explain the plan?
+      quiz:
+        key: QZ-CS-00e2
+        pair: Could you be more specific about the plan?
+        near:
+          - Could you show me the plan?
+          - Can I explain the plan?
+    - id: 11111111-1111-4111-8111-0000000000e4
+      side: b
+      prompt: その遅れの理由を説明してください。
+      answer: Could you explain the delay?
+      quiz:
+        key: QZ-CS-00e4
+        pair: Could you be more specific about the delay?
+        near:
+          - Could you say the delay?
+          - Can I explain the delay?
+- id: 11111111-1111-4111-8111-0000000000f0
+  type: INTENT
+  a:
+    label: Could you give me an example?
+    key: 例
+    direction: 例
+  b:
+    label: Could you show me ...?
+    key: 実際に見せる
+    direction: 実演
+  probes:
+    - id: 11111111-1111-4111-8111-0000000000f1
+      side: a
+      prompt: 例を一つもらえますか。
+      answer: Could you give me an example?
+      quiz:
+        key: QZ-CS-00f1
+        pair: Could you show me?
+        near:
+          - Can I give you an example?
+          - Could you be more specific?
+    - id: 11111111-1111-4111-8111-0000000000f3
+      side: a
+      prompt: その使い方の例をください。
+      answer: Could you give me an example?
+      quiz:
+        key: QZ-CS-00f3
+        pair: Could you show me?
+        near:
+          - Can I give you an example?
+          - Could you explain that again?
+    - id: 11111111-1111-4111-8111-0000000000f2
+      side: b
+      prompt: 実際に見せてもらえますか。
+      answer: Could you show me?
+      quiz:
+        key: QZ-CS-00f2
+        pair: Could you give me an example?
+        near:
+          - Can I show you?
+          - Could you tell me?
+    - id: 11111111-1111-4111-8111-0000000000f4
+      side: b
+      prompt: その画面を見せてください。
+      answer: Could you show me the screen?
+      quiz:
+        key: QZ-CS-00f4
+        pair: Could you give me an example of the screen?
+        near:
+          - Can I show you the screen?
+          - Could you look at the screen?
+- id: 11111111-1111-4111-8111-000000000100
+  type: SUBJECT
+  a:
+    label: Can I check something?
+    key: 私が確認
+    direction: 自分
+  b:
+    label: Could you check this?
+    key: 相手に確認依頼
+    direction: 相手
+  probes:
+    - id: 11111111-1111-4111-8111-000000000101
+      side: a
+      prompt: この数字を、自分で確認してもいいですか。
+      answer: Can I check this number?
+      quiz:
+        key: QZ-CS-0101
+        pair: Could you check this number?
+        near:
+          - Can you check this number?
+          - Did I check this number?
+    - id: 11111111-1111-4111-8111-000000000103
+      side: a
+      prompt: この予定を、自分で確認してもいいですか。
+      answer: Can I check this schedule?
+      quiz:
+        key: QZ-CS-0103
+        pair: Could you check this schedule?
+        near:
+          - Can you check this schedule?
+          - Did I check this schedule?
+    - id: 11111111-1111-4111-8111-000000000102
+      side: b
+      prompt: この数字を、確認してもらえますか。
+      answer: Could you check this number?
+      quiz:
+        key: QZ-CS-0102
+        pair: Can I check this number?
+        near:
+          - Could I check this number?
+          - Did you check this number?
+    - id: 11111111-1111-4111-8111-000000000104
+      side: b
+      prompt: この予定を、確認してもらえますか。
+      answer: Could you check this schedule?
+      quiz:
+        key: QZ-CS-0104
+        pair: Can I check this schedule?
+        near:
+          - Could I check this schedule?
+          - Did you check this schedule?
+- id: 11111111-1111-4111-8111-000000000110
+  type: TIME
+  a:
+    label: What happened next?
+    key: その後は？
+    direction: 続き
+  b:
+    label: What happened?
+    key: 何が起きた？
+    direction: 出来事
+  probes:
+    - id: 11111111-1111-4111-8111-000000000111
+      side: a
+      prompt: その後、何が起きましたか。
+      answer: What happened next?
+      quiz:
+        key: QZ-CS-0111
+        pair: What happened?
+        near:
+          - What will happen next?
+          - What is happening next?
+    - id: 11111111-1111-4111-8111-000000000113
+      side: a
+      prompt: 会議のあと、何がありましたか。
+      answer: What happened next?
+      quiz:
+        key: QZ-CS-0113
+        pair: What happened?
+        near:
+          - What will happen after the meeting?
+          - What is happening next?
+    - id: 11111111-1111-4111-8111-000000000112
+      side: b
+      prompt: 何が起きたのですか。
+      answer: What happened?
+      quiz:
+        key: QZ-CS-0112
+        pair: What happened next?
+        near:
+          - What is happening?
+          - What will happen?
+    - id: 11111111-1111-4111-8111-000000000114
+      side: b
+      prompt: 今朝、何があったのですか。
+      answer: What happened this morning?
+      quiz:
+        key: QZ-CS-0114
+        pair: What happened next this morning?
+        near:
+          - What is happening this morning?
+          - What will happen this morning?
+- id: 11111111-1111-4111-8111-000000000120
+  type: INTENT
+  a:
+    label: What makes you say that?
+    key: そう考える根拠
+    direction: 根拠
+  b:
+    label: Why ...?
+    key: 理由を直接聞く
+    direction: 理由
+  probes:
+    - id: 11111111-1111-4111-8111-000000000121
+      side: a
+      prompt: そう考える根拠は何ですか。
+      answer: What makes you say that?
+      quiz:
+        key: QZ-CS-0121
+        pair: Why that?
+        near:
+          - What do you mean by that?
+          - What makes you do that?
+    - id: 11111111-1111-4111-8111-000000000123
+      side: a
+      prompt: なぜそう言えるのですか。
+      answer: What makes you say that?
+      quiz:
+        key: QZ-CS-0123
+        pair: Why that?
+        near:
+          - What do you mean by that?
+          - What makes you do that?
+    - id: 11111111-1111-4111-8111-000000000122
+      side: b
+      prompt: なぜ遅れたのですか。
+      answer: Why were you late?
+      quiz:
+        key: QZ-CS-0122
+        pair: What makes you say you were late?
+        near:
+          - Why are you late?
+          - Why did you say late?
+    - id: 11111111-1111-4111-8111-000000000124
+      side: b
+      prompt: なぜ断ったのですか。
+      answer: Why did you say no?
+      quiz:
+        key: QZ-CS-0124
+        pair: What makes you say no?
+        near:
+          - Why do you say no?
+          - Why did you tell no?
+- id: 11111111-1111-4111-8111-000000000130
+  type: TIME
+  a:
+    label: What are you doing?
+    key: 今
+    direction: 現在
+  b:
+    label: What are you going to do?
+    key: これから
+    direction: 未来
+  probes:
+    - id: 11111111-1111-4111-8111-000000000131
+      side: a
+      prompt: 今、何をしていますか。
+      answer: What are you doing?
+      quiz:
+        key: QZ-CS-0131
+        pair: What are you going to do?
+        near:
+          - What do you do?
+          - What did you do?
+    - id: 11111111-1111-4111-8111-000000000133
+      side: a
+      prompt: 今、何の作業をしていますか。
+      answer: What are you doing now?
+      quiz:
+        key: QZ-CS-0133
+        pair: What are you going to do now?
+        near:
+          - What do you do now?
+          - What did you do now?
+    - id: 11111111-1111-4111-8111-000000000132
+      side: b
+      prompt: このあと、何をするつもりですか。
+      answer: What are you going to do?
+      quiz:
+        key: QZ-CS-0132
+        pair: What are you doing?
+        near:
+          - What did you do?
+          - What do you do?
+    - id: 11111111-1111-4111-8111-000000000134
+      side: b
+      prompt: 今夜、何をするつもりですか。
+      answer: What are you going to do tonight?
+      quiz:
+        key: QZ-CS-0134
+        pair: What are you doing now?
+        near:
+          - What did you do tonight?
+          - What do you do tonight?
+- id: 11111111-1111-4111-8111-000000000140
+  type: TIME
+  a:
+    label: Did you ...?
+    skill_key: QUESTION_PAST_DID
+    key: した？
+    direction: 完了
+  b:
+    label: Were you ...ing?
+    key: している途中だった？
+    direction: 進行
+  probes:
+    - id: 11111111-1111-4111-8111-000000000141
+      side: a
+      prompt: 昨日、料理をしましたか。
+      answer: Did you cook yesterday?
+      quiz:
+        key: QZ-CS-0141
+        pair: Were you cooking yesterday?
+        near:
+          - Do you cook yesterday?
+          - Have you ever cooked yesterday?
+    - id: 11111111-1111-4111-8111-000000000143
+      side: a
+      prompt: 今朝、メールを見ましたか。
+      answer: Did you read the email this morning?
+      quiz:
+        key: QZ-CS-0143
+        pair: Were you reading the email this morning?
+        near:
+          - Do you read the email this morning?
+          - Are you reading the email this morning?
+    - id: 11111111-1111-4111-8111-000000000142
+      side: b
+      prompt: 昨日のその時間、料理の途中でしたか。
+      answer: Were you cooking then?
+      quiz:
+        key: QZ-CS-0142
+        pair: Did you cook then?
+        near:
+          - Are you cooking then?
+          - Have you ever cooked then?
+    - id: 11111111-1111-4111-8111-000000000144
+      side: b
+      prompt: 電話が来たとき、メールを読んでいる途中でしたか。
+      answer: Were you reading the email then?
+      quiz:
+        key: QZ-CS-0144
+        pair: Did you read the email then?
+        near:
+          - Are you reading the email then?
+          - Do you read the email then?
+- id: 11111111-1111-4111-8111-000000000150
+  type: REGISTER
+  a:
+    label: can
+    key: 普通・直接
+    direction: 直接
+  b:
+    label: could
+    key: 少し丁寧
+    direction: 丁寧
+  probes:
+    - id: 11111111-1111-4111-8111-000000000151
+      side: a
+      prompt: 窓を開けてくれますか。直接の頼み方で。
+      answer: Can you open the window?
+      quiz:
+        key: QZ-CS-0151
+        pair: Could you open the window?
+        near:
+          - Can I open the window?
+          - Could I open the window?
+    - id: 11111111-1111-4111-8111-000000000153
+      side: a
+      prompt: 私は泳げます。普通の言い方で。
+      answer: I can swim.
+      quiz:
+        key: QZ-CS-0153
+        pair: I could swim.
+        near:
+          - I can swimming.
+          - I am able swim.
+    - id: 11111111-1111-4111-8111-000000000152
+      side: b
+      prompt: 窓を開けてもらえますか。少し丁寧に。
+      answer: Could you open the window?
+      quiz:
+        key: QZ-CS-0152
+        pair: Can you open the window?
+        near:
+          - Could I open the window?
+          - Can I open the window?
+    - id: 11111111-1111-4111-8111-000000000154
+      side: b
+      prompt: 子供のころは泳げました。少し控えめに。
+      answer: I could swim.
+      quiz:
+        key: QZ-CS-0154
+        pair: I can swim.
+        near:
+          - I could swimming.
+          - I can swam.
+- id: 11111111-1111-4111-8111-000000000160
+  type: TIME
+  a:
+    label: going to
+    key: 予定・意図
+    direction: 予定
+  b:
+    label: will
+    key: その場の意思・予測
+    direction: その場
+  probes:
+    - id: 11111111-1111-4111-8111-000000000161
+      side: a
+      prompt: 今夜、勉強する予定です。
+      answer: I am going to study tonight.
+      quiz:
+        key: QZ-CS-0161
+        pair: I will study tonight.
+        near:
+          - I study tonight.
+          - I studied tonight.
+    - id: 11111111-1111-4111-8111-000000000163
+      side: a
+      prompt: 来週、大阪へ行く予定です。
+      answer: I am going to Osaka next week.
+      quiz:
+        key: QZ-CS-0163
+        pair: I will go to Osaka next week.
+        near:
+          - I went to Osaka next week.
+          - I am going to go Osaka next week.
+    - id: 11111111-1111-4111-8111-000000000162
+      side: b
+      prompt: 今決めた。今夜勉強します。
+      answer: I will study tonight.
+      quiz:
+        key: QZ-CS-0162
+        pair: I am going to study tonight.
+        near:
+          - I study tonight.
+          - I studied tonight.
+    - id: 11111111-1111-4111-8111-000000000164
+      side: b
+      prompt: 今の予測では、雨が降ります。
+      answer: It will rain.
+- id: 11111111-1111-4111-8111-000000000170
+  type: REGISTER
+  a:
+    label: want to
+    key: 普通
+    direction: 普通
+  b:
+    label: would like to
+    key: 丁寧
+    direction: 丁寧
+  probes:
+    - id: 11111111-1111-4111-8111-000000000171
+      side: a
+      prompt: コーヒーが欲しいです。普通の言い方で。
+      answer: I want to drink coffee.
+      quiz:
+        key: QZ-CS-0171
+        pair: I would like to drink coffee.
+        near:
+          - I want drink coffee.
+          - I wanted to drink coffee.
+    - id: 11111111-1111-4111-8111-000000000173
+      side: a
+      prompt: 予約したいです。普通の言い方で。
+      answer: I want to make a reservation.
+      quiz:
+        key: QZ-CS-0173
+        pair: I would like to make a reservation.
+        near:
+          - I want make a reservation.
+          - I wanted to make a reservation.
+    - id: 11111111-1111-4111-8111-000000000172
+      side: b
+      prompt: コーヒーが欲しいです。丁寧に。
+      answer: I would like to drink coffee.
+      quiz:
+        key: QZ-CS-0172
+        pair: I want to drink coffee.
+        near:
+          - I would like drink coffee.
+          - I like to drink coffee.
+    - id: 11111111-1111-4111-8111-000000000174
+      side: b
+      prompt: 予約したいです。丁寧に。
+      answer: I would like to make a reservation.
+      quiz:
+        key: QZ-CS-0174
+        pair: I want to make a reservation.
+        near:
+          - I would like make a reservation.
+          - I like to make a reservation.
+- id: 11111111-1111-4111-8111-000000000180
+  type: MEANING
+  a:
+    label: any
+    key: 基本疑問・否定
+    direction: 疑問・否定
+  b:
+    label: some
+    key: 基本肯定
+    direction: 肯定
+  probes:
+    - id: 11111111-1111-4111-8111-000000000181
+      side: a
+      prompt: 質問。コーヒーはありますか。
+      answer: Do you have any coffee?
+      quiz:
+        key: QZ-CS-0181
+        pair: Do you have some coffee?
+        near:
+          - Do you have many coffee?
+          - Are you have any coffee?
+    - id: 11111111-1111-4111-8111-000000000183
+      side: a
+      prompt: 否定。時間はありません。
+      answer: I do not have any time.
+      quiz:
+        key: QZ-CS-0183
+        pair: I do not have some time.
+        near:
+          - I do not have many time.
+          - I have not any time.
+    - id: 11111111-1111-4111-8111-000000000182
+      side: b
+      prompt: 肯定。コーヒーが少しあります。
+      answer: I have some coffee.
+      quiz:
+        key: QZ-CS-0182
+        pair: I have any coffee.
+        near:
+          - I have many coffee.
+          - I have few coffee.
+    - id: 11111111-1111-4111-8111-000000000184
+      side: b
+      prompt: 肯定。時間が少しあります。
+      answer: I have some time.
+      quiz:
+        key: QZ-CS-0184
+        pair: I have any time.
+        near:
+          - I have many time.
+          - I have few time.
+- id: 11111111-1111-4111-8111-000000000190
+  type: MEANING
+  a:
+    label: many
+    key: 数える
+    direction: 可算
+  b:
+    label: much
+    key: 数えない
+    direction: 不可算
+  probes:
+    - id: 11111111-1111-4111-8111-000000000191
+      side: a
+      prompt: 本がたくさんあります。数えられるもの。
+      answer: I have many books.
+      quiz:
+        key: QZ-CS-0191
+        pair: I have much books.
+        near:
+          - I have many book.
+          - I have much book.
+    - id: 11111111-1111-4111-8111-000000000193
+      side: a
+      prompt: 質問がたくさんあります。数えられるもの。
+      answer: I have many questions.
+      quiz:
+        key: QZ-CS-0193
+        pair: I have much questions.
+        near:
+          - I have many question.
+          - I have much question.
+    - id: 11111111-1111-4111-8111-000000000192
+      side: b
+      prompt: 水がたくさんあります。数えられないもの。
+      answer: I have much water.
+      quiz:
+        key: QZ-CS-0192
+        pair: I have many water.
+        near:
+          - I have many waters.
+          - I have much waters.
+    - id: 11111111-1111-4111-8111-000000000194
+      side: b
+      prompt: 時間があまりありません。数えられないもの。
+      answer: I do not have much time.
+      quiz:
+        key: QZ-CS-0194
+        pair: I do not have many time.
+        near:
+          - I do not have many times.
+          - I do not have much times.
+- id: 11111111-1111-4111-8111-0000000001a0
+  type: MEANING
+  a:
+    label: say
+    key: 言う内容
+    direction: 内容
+  b:
+    label: tell
+    key: 人に伝える
+    direction: 相手
+  probes:
+    - id: 11111111-1111-4111-8111-0000000001a1
+      side: a
+      prompt: 「ありがとう」と言ってください。内容だけ。
+      answer: Say thank you.
+      quiz:
+        key: QZ-CS-01a1
+        pair: Tell thank you.
+        near:
+          - Speak thank you.
+          - Talk thank you.
+    - id: 11111111-1111-4111-8111-0000000001a3
+      side: a
+      prompt: 自分の名前を言ってください。
+      answer: Say your name.
+      quiz:
+        key: QZ-CS-01a3
+        pair: Tell your name.
+        near:
+          - Speak your name.
+          - Talk your name.
+    - id: 11111111-1111-4111-8111-0000000001a2
+      side: b
+      prompt: 田中さんに「ありがとう」と伝えてください。
+      answer: Tell Tanaka thank you.
+      quiz:
+        key: QZ-CS-01a2
+        pair: Say Tanaka thank you.
+        near:
+          - Speak Tanaka thank you.
+          - Talk Tanaka thank you.
+    - id: 11111111-1111-4111-8111-0000000001a4
+      side: b
+      prompt: 私に自分の名前を伝えてください。
+      answer: Tell me your name.
+      quiz:
+        key: QZ-CS-01a4
+        pair: Say me your name.
+        near:
+          - Speak me your name.
+          - Talk me your name.
+- id: 11111111-1111-4111-8111-0000000001b0
+  type: MEANING
+  a:
+    label: look
+    key: 目を向ける
+    direction: 向ける
+  b:
+    label: see
+    key: 見える
+    direction: 見える
+  probes:
+    - id: 11111111-1111-4111-8111-0000000001b1
+      side: a
+      prompt: あの看板に目を向けてください。
+      answer: Look at that sign.
+      quiz:
+        key: QZ-CS-01b1
+        pair: See that sign.
+        near:
+          - Watch that sign.
+          - Look that sign.
+    - id: 11111111-1111-4111-8111-0000000001b3
+      side: a
+      prompt: 地図に目を向けてください。
+      answer: Look at the map.
+      quiz:
+        key: QZ-CS-01b3
+        pair: See the map.
+        near:
+          - Watch the map.
+          - Look the map.
+    - id: 11111111-1111-4111-8111-0000000001b2
+      side: b
+      prompt: あの看板が見えますか。
+      answer: Do you see that sign?
+      quiz:
+        key: QZ-CS-01b2
+        pair: Do you look at that sign?
+        near:
+          - Do you watch that sign?
+          - Are you seeing that sign?
+    - id: 11111111-1111-4111-8111-0000000001b4
+      side: b
+      prompt: 地図が見えますか。
+      answer: Do you see the map?
+      quiz:
+        key: QZ-CS-01b4
+        pair: Do you look at the map?
+        near:
+          - Do you watch the map?
+          - Are you seeing the map?
+- id: 11111111-1111-4111-8111-0000000001c0
+  type: MEANING
+  a:
+    label: look
+    key: 目を向ける
+    direction: 向ける
+  b:
+    label: watch
+    key: 動きを見る
+    direction: 動き
+  probes:
+    - id: 11111111-1111-4111-8111-0000000001c1
+      side: a
+      prompt: 鳥のほうに目を向けてください。
+      answer: Look at the bird.
+      quiz:
+        key: QZ-CS-01c1
+        pair: Watch the bird.
+        near:
+          - See the bird.
+          - Look the bird.
+    - id: 11111111-1111-4111-8111-0000000001c3
+      side: a
+      prompt: 子供のほうに目を向けてください。
+      answer: Look at the child.
+      quiz:
+        key: QZ-CS-01c3
+        pair: Watch the child.
+        near:
+          - See the child.
+          - Look the child.
+    - id: 11111111-1111-4111-8111-0000000001c2
+      side: b
+      prompt: 鳥の動きを見てください。
+      answer: Watch the bird.
+      quiz:
+        key: QZ-CS-01c2
+        pair: Look at the bird.
+        near:
+          - See the bird.
+          - Watch at the bird.
+    - id: 11111111-1111-4111-8111-0000000001c4
+      side: b
+      prompt: 子供の動きを見てください。
+      answer: Watch the child.
+      quiz:
+        key: QZ-CS-01c4
+        pair: Look at the child.
+        near:
+          - See the child.
+          - Watch at the child.
+- id: 11111111-1111-4111-8111-0000000001d0
+  type: MEANING
+  a:
+    label: see
+    key: 見える
+    direction: 見える
+  b:
+    label: watch
+    key: 動きを見る
+    direction: 動き
+  probes:
+    - id: 11111111-1111-4111-8111-0000000001d1
+      side: a
+      prompt: 海が見えますか。
+      answer: Do you see the sea?
+      quiz:
+        key: QZ-CS-01d1
+        pair: Do you watch the sea?
+        near:
+          - Do you look at the sea?
+          - Are you watching the sea?
+    - id: 11111111-1111-4111-8111-0000000001d3
+      side: a
+      prompt: 星が見えますか。
+      answer: Do you see the stars?
+      quiz:
+        key: QZ-CS-01d3
+        pair: Do you watch the stars?
+        near:
+          - Do you look at the stars?
+          - Are you watching the stars?
+    - id: 11111111-1111-4111-8111-0000000001d2
+      side: b
+      prompt: 波の動きを見てください。
+      answer: Watch the waves.
+      quiz:
+        key: QZ-CS-01d2
+        pair: See the waves.
+        near:
+          - Look the waves.
+          - Watch at the waves.
+    - id: 11111111-1111-4111-8111-0000000001d4
+      side: b
+      prompt: 試合の動きを見てください。
+      answer: Watch the game.
+      quiz:
+        key: QZ-CS-01d4
+        pair: See the game.
+        near:
+          - Look the game.
+          - Watch at the game.
+- id: 11111111-1111-4111-8111-0000000001e0
+  type: MEANING
+  a:
+    label: hear
+    key: 聞こえる
+    direction: 聞こえる
+  b:
+    label: listen
+    key: 意識して聞く
+    direction: 意識
+  probes:
+    - id: 11111111-1111-4111-8111-0000000001e1
+      side: a
+      prompt: 音楽が聞こえますか。
+      answer: Do you hear the music?
+      quiz:
+        key: QZ-CS-01e1
+        pair: Do you listen to the music?
+        near:
+          - Do you listen the music?
+          - Are you hearing to the music?
+    - id: 11111111-1111-4111-8111-0000000001e3
+      side: a
+      prompt: 外の音が聞こえますか。
+      answer: Do you hear the noise outside?
+      quiz:
+        key: QZ-CS-01e3
+        pair: Do you listen to the noise outside?
+        near:
+          - Do you listen the noise outside?
+          - Are you hearing to the noise outside?
+    - id: 11111111-1111-4111-8111-0000000001e2
+      side: b
+      prompt: 音楽を意識して聞いてください。
+      answer: Listen to the music.
+      quiz:
+        key: QZ-CS-01e2
+        pair: Hear the music.
+        near:
+          - Listen the music.
+          - Hear to the music.
+    - id: 11111111-1111-4111-8111-0000000001e4
+      side: b
+      prompt: 私の話を意識して聞いてください。
+      answer: Listen to me.
+      quiz:
+        key: QZ-CS-01e4
+        pair: Hear me.
+        near:
+          - Listen me.
+          - Hear to me.
+- id: 11111111-1111-4111-8111-0000000001f0
+  type: MEANING
+  a:
+    label: job
+    key: 一つの職
+    direction: 職
+  b:
+    label: work
+    key: 仕事・働く
+    direction: 働く
+  probes:
+    - id: 11111111-1111-4111-8111-0000000001f1
+      side: a
+      prompt: 新しい職に就きました。
+      answer: I got a new job.
+      quiz:
+        key: QZ-CS-01f1
+        pair: I got a new work.
+        near:
+          - I got new job.
+          - I got a new jobs.
+    - id: 11111111-1111-4111-8111-0000000001f3
+      side: a
+      prompt: その職は忙しいですか。
+      answer: Is the job busy?
+      quiz:
+        key: QZ-CS-01f3
+        pair: Is the work busy?
+        near:
+          - Is the job busily?
+          - Does the job busy?
+    - id: 11111111-1111-4111-8111-0000000001f2
+      side: b
+      prompt: 今日は家で仕事をします。
+      answer: I work at home today.
+      quiz:
+        key: QZ-CS-01f2
+        pair: I job at home today.
+        near:
+          - I working at home today.
+          - I do job at home today.
+    - id: 11111111-1111-4111-8111-0000000001f4
+      side: b
+      prompt: 夜も働きますか。
+      answer: Do you work at night?
+      quiz:
+        key: QZ-CS-01f4
+        pair: Do you job at night?
+        near:
+          - Are you work at night?
+          - Do you working at night?
+- id: 11111111-1111-4111-8111-000000000200
+  type: MEANING
+  a:
+    label: fun
+    key: 楽しい
+    direction: 楽しい
+  b:
+    label: funny
+    key: 面白い・変な
+    direction: 面白い
+  probes:
+    - id: 11111111-1111-4111-8111-000000000201
+      side: a
+      prompt: その旅行は楽しかったです。
+      answer: The trip was fun.
+      quiz:
+        key: QZ-CS-0201
+        pair: The trip was funny.
+        near:
+          - The trip was a fun.
+          - The trip is fun.
+    - id: 11111111-1111-4111-8111-000000000203
+      side: a
+      prompt: そのゲームは楽しいです。
+      answer: The game is fun.
+      quiz:
+        key: QZ-CS-0203
+        pair: The game is funny.
+        near:
+          - The game was fun.
+          - The game is a fun.
+    - id: 11111111-1111-4111-8111-000000000202
+      side: b
+      prompt: その話は面白かったです。
+      answer: The story was funny.
+      quiz:
+        key: QZ-CS-0202
+        pair: The story was fun.
+        near:
+          - The story is funny.
+          - The story was a funny.
+    - id: 11111111-1111-4111-8111-000000000204
+      side: b
+      prompt: その絵は変で面白いです。
+      answer: The picture is funny.
+      quiz:
+        key: QZ-CS-0204
+        pair: The picture is fun.
+        near:
+          - The picture was funny.
+          - The picture is a funny.
+- id: 6775447e-8d66-4453-b46a-f510a4ba9bd9
+  type: MEANING
+  a:
+    label: have a problem
+    key: have(状態・所有)
+    direction: 問題を抱えている状態を表す
+  b:
+    label: take a problem
+    key: take(引き受け・取り組み対象)
+    direction: 問題を取り上げて対処する行為を表す
+  source: learner_registered
+  probes:
+    - id: ca1d8ce2-dbd8-4a0b-abff-b5da74b62d41
+      side: a
+      prompt: 彼は毎朝ひどい頭痛に悩まされている。この状態を一文で表すと?
+      answer: He has a problem with headaches every morning.
+    - id: 441d9640-3b4f-4359-b8df-87f2eedc3d31
+      side: a
+      prompt: 新しい部署で同僚とうまくいかず困っている社員の状況を一文で表すと?
+      answer: She has a problem with her new team.
+    - id: c729f01c-3d04-46d3-a865-4d1e8156a50f
+      side: b
+      prompt: 上司が部下にこの課題を担当するよう指示する場面を一文で表すと?
+      answer: Take this problem and solve it by Friday.
+    - id: 11b782d5-8c8a-4eb9-a57e-44075d612312
+      side: b
+      prompt: 数学の授業で先生が生徒に教科書から問題を一つ選んで解かせる指示を一文で表すと?
+      answer: Take a problem from page 10 and solve it.
+- id: 83d4c8a8-6b19-4b9e-bcac-4c3cd8eae2c7
+  type: MEANING
+  a:
+    label: borrow a book
+    key: receive
+    direction: 相手から自分へ
+  b:
+    label: lend a book
+    key: provide
+    direction: 自分から相手へ
+  source: learner_registered
+  probes:
+    - id: 0f59343f-fd5a-4432-b159-c79c2e2813e4
+      side: a
+      prompt: 図書館で本を借りたいとき、何と言う?
+      answer: borrow a book
+    - id: 16718f14-6f5c-4936-9c55-2ce0b83a0315
+      side: a
+      prompt: 先生から教科書を一時的に受け取る行為を表す語句は?
+      answer: borrow a book
+    - id: 03f4fd0d-bdac-418f-aa3d-532bb578c3dc
+      side: b
+      prompt: 友達が本を忘れたので、自分の本を貸すとき何と言う?
+      answer: lend a book
+    - id: d788fcbc-3342-41ae-8b1d-d3341ef7d478
+      side: b
+      prompt: 自分の本棚から本を人に渡して使わせる行為を表す語句は?
+      answer: lend a book

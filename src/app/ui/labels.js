@@ -106,6 +106,12 @@ export function observerLabel(value) {
   return "採点方法不明"
 }
 
+export function aiReasonLabel(reason) {
+  if (reason === "setting_off") return "設定で AI をオフにしています。"
+  if (reason === "key_missing") return "API キーが未設定です。"
+  return "AI機能が現在利用できません。"
+}
+
 export function uiErrorMessage(value, fallback = "処理に失敗しました。もう一度お試しください。") {
   if (typeof value !== "string" || value.trim() === "") return fallback
   return /[\u3040-\u30ff\u3400-\u9fff]/u.test(value) ? value : fallback

@@ -1,4 +1,4 @@
-import { askClaude } from "./client.mjs"
+import { aiGate, askClaude } from "./client.mjs"
 import { aiEnabled } from "./isEnabled.mjs"
 
 const CONTRACTIONS = {
@@ -201,7 +201,7 @@ function parseObservation(raw) {
   return { ...observation, issues }
 }
 
-function notice(status, success, detail, expected) {
+async function notice(status, success, detail, expected) {
   const ungraded = status !== "graded"
   return {
     ok: true,
@@ -213,7 +213,7 @@ function notice(status, success, detail, expected) {
       detail,
       expected,
       retry: ungraded,
-      aiEnabled: aiEnabled(),
+      aiEnabled: await aiEnabled(),
     },
     error: null,
   }
@@ -272,7 +272,8 @@ export async function gradeDecision(input) {
     confidence: null,
     expected,
   })
-  if (!aiEnabled()) return unavailableDecision("ANTHROPIC_API_KEY is unset")
+  const blocked = await aiGate()
+  if (blocked) return unavailableDecision(blocked.data.aiReason === "setting_off" ? "AI is turned off in settings" : "ANTHROPIC_API_KEY is unset")
   const prompts = graderPrompts(trainingMode, required, `${canonical} (${meaning})`, prompt, expected, actual)
   let observation = null
   let lastError = "grader response has no JSON object"

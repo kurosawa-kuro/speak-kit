@@ -1,4 +1,4 @@
-import { aiEnabled } from "./ai/isEnabled.mjs"
+import { aiAvailability } from "./ai/isEnabled.mjs"
 import { envelope, validationError } from "./envelope.mjs"
 import { query, withTransaction } from "./db.mjs"
 import { quizProgress, quizRoute } from "./quiz.mjs"
@@ -18,10 +18,6 @@ function text(request, key) {
 
 function domainCode(request) {
   return text(request, "domain_code") || ENGLISH
-}
-
-function aiAvailable() {
-  return aiEnabled()
 }
 
 async function domainId(code) {
@@ -128,7 +124,7 @@ async function planView(planId, domainId, code) {
       plan: items,
       dueConfusion,
       route: english ? await quizRoute() : null,
-      aiAvailable: aiAvailable(),
+      ...(await aiAvailability()),
     },
     null,
   )

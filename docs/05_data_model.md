@@ -18,7 +18,7 @@
 
 製品の認証と学習記録の保存先は、Supabase（Auth + Postgres、無料枠）である。①用 project `speak-kit`（South Asia / Mumbai、黒澤本人の一人用）は作成済みである。リージョンは Mumbai のままにする。この project は毎日の学習運用アプリではなく、live の `skill-trainer` とは別である。SQL の適用とクラウド手順は、ローカル Postgres で Golden Path が通ったあとである。Supabase のログイン機能も同じく後回しである。今のローカルアプリにはログイン画面もセッションも置かない。
 
-ローカル先行の保存先は、speak-kit 専用のローカル Postgres である。schema は参照元 `sql/postgres/` の 28 ファイルをファイル名順に写し、そのローカル DB にだけ適用する。接続文字列は `DB_FLOW_URL` ではない。live の学習者データベース、Job Control の Supabase、private-ops のローカル Postgres 正本には書かない。Supabase への載せ替えはクラウド手順である。
+ローカル先行の保存先は、speak-kit 専用のローカル Postgres である。schema は参照元 `sql/postgres/` の 28 ファイルをファイル名順に写し、そのローカル DB にだけ適用する。speak-kit 独自の表は、参照元のファイルを書き換えずに新しいファイルで足す。1 本目は `20261013090000_speak_kit_learner_settings.sql` の `skill_trainer.learner_settings`（`learner_key` ごとの `ai_enabled`、`updated_at`）である。教材の正本は `data/` の YAML である（`data/README.md`）。接続文字列は `DB_FLOW_URL` ではない。live の学習者データベース、Job Control の Supabase、private-ops のローカル Postgres 正本には書かない。Supabase への載せ替えはクラウド手順である。
 
 コアが保存するのは、学習記録とお気に入りである。会話ログを保存するか、プライバシー方針をどうするかは未決である。未決のままカラムやテーブルを足さない。
 

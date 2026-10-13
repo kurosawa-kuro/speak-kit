@@ -67,9 +67,10 @@
 |---|---|
 | [05_done/2026-10-13-match-original-training-loop.md](05_done/2026-10-13-match-original-training-loop.md) | 元の英会話学習から外れていた計画・記録・会話の 26 箇所。残りは 47 件のタスクへ引き継いで解消した |
 | [05_done/2026-10-13-close-remaining-original-gaps.md](05_done/2026-10-13-close-remaining-original-gaps.md) | 元の英会話学習との残りの差分 47 件（6 は owner 判断で対象外）。弱点診断の作成と解消、記憶確認、混同検知、今日の計画モード、会話での使用記録まで観測した |
-| [03_active/2026-10-13-move-code-under-src.md](03_active/2026-10-13-move-code-under-src.md) | プログラムコード（`app/`、`lib/`、`test/`）を `src/` 配下へ移す。Rust は置かない。`03_active/` にある |
-| [02_backlog/2026-10-13-settings-screen.md](02_backlog/2026-10-13-settings-screen.md) | 設定画面を作る。第一弾は「AI を使う／使わない」。ほかの設定項目の候補 28 件も一覧にした。owner の着手指示待ち |
-| [02_backlog/2026-10-13-content-yaml-in-data.md](02_backlog/2026-10-13-content-yaml-in-data.md) | 教材（表現・練習問題・クイズ・混同ペア）を `data/` の YAML で管理し、`npm run data:sync` で DB へ反映する。owner の着手指示待ち |
+| [05_done/2026-10-13-move-code-under-src.md](05_done/2026-10-13-move-code-under-src.md) | プログラムコードを `src/app/`、`src/lib/`、`src/test/` へ移した。Rust は置かない。テスト 8 件とビルドのルートは移動前と同じ |
+| [05_done/2026-10-13-settings-screen.md](05_done/2026-10-13-settings-screen.md) | 設定画面の第一弾。「AI を使う／使わない」を `learner_settings` に保存し、オフならキーがあっても Anthropic へ接続しない。各画面の表示を「設定でオフ」「キー未設定」に分けた。ほかの設定項目の候補 3〜28 は owner の選択待ち |
+| [05_done/2026-10-13-content-yaml-in-data.md](05_done/2026-10-13-content-yaml-in-data.md) | 教材（表現 51・混同ペア 34）を `data/` の YAML に移した。`npm run data:check` / `data:sync` / `data:sync -- --apply` / `data:export` で検査・差分・反映・書き出しができる。追加・変更・停止を練習用 DB で観測した |
+| [02_backlog/2026-10-13-architecture-refactor-db-first.md](02_backlog/2026-10-13-architecture-refactor-db-first.md) | 設計レベルのリファクタリング案。DB の作り直しを先に行い、次にサーバーの層の分離、画面の実ルート化。すぐ直すべきバグ 10 件を含む。owner の段ごとの着手指示待ち |
 | [05_done/2026-10-13-local-text-golden-path.md](05_done/2026-10-13-local-text-golden-path.md) | 参照元の SQL 28 本と dispatch 16 名をローカル Postgres `speak_kit` へ写し、キー無しの choice 経路を通した |
 | [03_active/refactoring-candidates.md](03_active/refactoring-candidates.md) | 残りのクリーンアップ候補 |
 
@@ -97,7 +98,5 @@
 ## Notes
 ```
 
-進行中の本作業は
-[03_active/2026-10-13-move-code-under-src.md](03_active/2026-10-13-move-code-under-src.md)
-である。クリーンアップ候補は
+進行中の本作業は無い。次の候補は `02_backlog/` の設定画面と教材の YAML 管理で、どちらも owner の着手指示待ちである。クリーンアップ候補は
 [03_active/refactoring-candidates.md](03_active/refactoring-candidates.md) で管理する。

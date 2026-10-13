@@ -23,7 +23,7 @@
 
 作業してよいのは、owner がこのセッションで指示した範囲だけである。確定した範囲は `docs/01_requirements.md` から `docs/08_release_runbook.md` にある。アイディアノートの未決（フレーズ素材、会話ログ、テンプレート化、`speak-next` の完成ラインと吸収）を実装で埋めない。音声入出力は作らない。各インスタンスは利用者一人のプライベートアプリであり、目的は AI キーの悪用防止である。先にローカルで Golden Path を通す。Vercel、①用 Supabase、配布用 GitHub は別ステップである。`speak-next` は、`speak-kit` ができてからこのリポジトリをコピーして切る。今は切らない。コピー後の変更を `speak-kit` へ戻さない。
 
-実装の参照元は `/Users/kurosawa/Dev/private-ops/apps/skill-trainer`。挙動、`sql/postgres/`、`src/domains/` の文言は限りなくコピーする。Rust API（`src/*.rs`）はフル Next.js では crate のまま載せず、同じ挙動を Next.js API Routes へ書き直す。live の毎日の学習は private-ops 内 `skill-trainer` に残す。障害修正以外、エンジン、マイグレーション、Retool publish を live に出さない。live の学習者データベースと `DB_FLOW_URL` へ書かない。private-ops の個人運用ルールをこの公開配布アプリへそのまま適用しない。
+実装の参照元は `/Users/kurosawa/Dev/private-ops/apps/skill-trainer`。挙動、`sql/postgres/`、参照元の `src/domains/` の文言を土台にし、そこから改良する（2026-10-13 owner。それまでは限りなくコピーする方針だった）。Rust API（参照元の `src/*.rs`）はフル Next.js では crate のまま載せず、同じ挙動を Next.js API Routes へ書き直す。live の毎日の学習は private-ops 内 `skill-trainer` に残す。障害修正以外、エンジン、マイグレーション、Retool publish を live に出さない。live の学習者データベースと `DB_FLOW_URL` へ書かない。private-ops の個人運用ルールをこの公開配布アプリへそのまま適用しない。
 
 談話訓練、新しい Phase 番号、Phase 1 Gate の変更、Skill / Exercise の登録は、このリポジトリの作業順に載せない。
 
@@ -46,7 +46,7 @@ make lint     # 静的解析
 - フロントは Next.js（React）。バックエンドは Next.js API Routes。デプロイは Vercel。認証と DB は Supabase（Auth + Postgres）。
 - LLM は Claude API で任意。呼び出しはサーバー側 proxy のみ。クライアントに API キーを渡さない。
 - コア（テキストのフレーズ練習、学習記録・お気に入り）は Anthropic キー無しで最後まで通る。読み上げ、録音、STT、TTS は作らない。AI 機能は別エンドポイントに隔離し、コアの route は AI クライアントを import しない。
-- キー有無は 1 箇所（例: `lib/ai/isEnabled.ts`）で算出し、サーバーは `aiEnabled: boolean` だけを返す。401 / 429 / 5xx / timeout は該当 AI 呼び出しだけの失敗にする。
+- AI を使えるかは、設定（`learner_settings.ai_enabled`）とキー有無から 1 箇所（`src/lib/ai/isEnabled.mjs`）で算出する。設定がオフなら、キーがあっても Anthropic へ接続しない。サーバーはキーの値を返さず、`aiEnabled`、キーの設定済み／未設定、使えない理由だけを返す。401 / 429 / 5xx / timeout は該当 AI 呼び出しだけの失敗にする。
 - 各自が自分の GitHub・Vercel・Supabase・任意の Anthropic キーでデプロイする。黒澤名義の課金・鍵・DB に相手の利用量を載せない。
 - ハーネスの非機密設定は `env/config.yaml`、ローカル秘密情報は `env/secret.yaml`、チーム共有は Doppler (`doppler.yaml`)。配布先の実行時秘密は各自の Vercel / Supabase に置く。
 - 設計・運用ドキュメントは `docs/` 配下。権威順位と更新規約は `docs/00_index.md` に従う。

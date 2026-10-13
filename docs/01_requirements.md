@@ -8,7 +8,7 @@
 
 live の毎日の学習は private-ops 内の `skill-trainer` に残す。このリポジトリの変更を live へ載せない。`speak-next`（Phase 2 移行の発展アプリ）は、`speak-kit` ができてからこのリポジトリをコピーして切る。今は切らない。
 
-実装時の参照元アプリは `/Users/kurosawa/Dev/private-ops/apps/skill-trainer` である。挙動、`sql/postgres/`、`src/domains/` の文言は、限りなくコピーで済ませる。Rust の API（`src/*.rs` の dispatch とエンジン）は、このリポジトリがフル Next.js であるため crate のままは載せず、同じ挙動を Next.js API Routes へ書き直す。
+実装時の参照元アプリは `/Users/kurosawa/Dev/private-ops/apps/skill-trainer` である。挙動、`sql/postgres/`、参照元の `src/domains/` の文言を土台にし、そこから改良する（2026-10-13 owner。それまでは限りなくコピーする方針だった）。Rust の API（参照元の `src/*.rs` の dispatch とエンジン）は、このリポジトリがフル Next.js であるため crate のままは載せず、同じ挙動を Next.js API Routes へ書き直す。
 
 ## 範囲
 

@@ -13,6 +13,7 @@ async function post(path, body) {
 
 export function AiPanel() {
   const [enabled, setEnabled] = useState(false)
+  const [reason, setReason] = useState(null)
   const [scenarioName, setScenarioName] = useState("teacher")
   const [history, setHistory] = useState([])
   const [draft, setDraft] = useState("")
@@ -24,7 +25,10 @@ export function AiPanel() {
   useEffect(() => {
     fetch("/api/ai/status")
       .then((response) => response.json())
-      .then((body) => setEnabled(body.aiEnabled === true))
+      .then((body) => {
+        setEnabled(body.aiEnabled === true)
+        setReason(body.reason ?? null)
+      })
       .catch(() => setEnabled(false))
   }, [])
 
@@ -64,7 +68,7 @@ export function AiPanel() {
   return (
     <section style={{ border: "1px solid #ccc", padding: "0.75rem 1rem", marginBottom: "1.5rem" }}>
       <h2 style={{ fontSize: "1rem", margin: "0 0 0.5rem" }}>AI</h2>
-      {enabled ? null : <p>無効です。Anthropic キーを設定すると使えます。</p>}
+      {enabled ? null : <p>{reason === "setting_off" ? "設定で AI をオフにしています。" : "API キーが未設定です。Anthropic キーを設定すると使えます。"}</p>}
       <form onSubmit={sendTalk}>
         <h3 style={{ fontSize: "0.95rem" }}>会話</h3>
         <select value={scenarioName} disabled={!enabled} onChange={(event) => setScenarioName(event.target.value)}>

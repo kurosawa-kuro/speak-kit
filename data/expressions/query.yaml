@@ -1,0 +1,229 @@
+# 表現の教材。書き方は data/README.md。key と code は一度決めたら変えない。
+- key: QUESTION_BACK_HOW_ABOUT_YOU
+  code: P1-018
+  form: How about you?
+  meaning: 相手へ質問を返す
+  intent: QUESTION_BACK
+  tier: CORE
+  kind: atomic_chunk
+  example:
+    en: How about you?
+    ja: あなたは？
+  quiz:
+    meaning:
+      near:
+        - 一緒にどうですか？
+        - 私の場合は。
+        - それはどういう意味？
+    intent:
+      correct: How about you?
+      near:
+        - How about ...?
+        - In my case, ...
+        - What does that mean?
+    form:
+      near:
+        - How about it?
+        - What about it?
+        - Are you?
+  status: active
+- key: QUESTION_EXPERIENCE_HAVE_EVER
+  code: P1-017
+  form: Have you ever {past_participle}?
+  meaning: 経験を質問する
+  intent: EXPERIENCE
+  tier: CORE
+  kind: pattern
+  example:
+    en: Have you ever been abroad?
+    ja: 海外に行ったことある？
+  contrast_drill: true
+  quiz:
+    meaning:
+      near:
+        - 昨日海外に行った？
+        - 海外に行く予定？
+        - 海外にいるの？
+    intent:
+      correct: Have you ever ...?
+      near:
+        - Did you ...?
+        - Do you ...?
+        - I have been to ...
+    form:
+      near:
+        - Did you go abroad?
+        - Have you ever gone to abroad?
+        - Are you abroad?
+  status: active
+- key: QUESTION_FAVORITE_WHAT
+  code: P1-014
+  form: What is your favorite {topic}?
+  meaning: 相手の好みを質問する
+  intent: DETAIL_WHAT
+  tier: CORE
+  kind: pattern
+  example:
+    en: What's your favorite food?
+    ja: 好きな食べ物は何？
+  quiz:
+    meaning:
+      near:
+        - 何を食べたい？
+        - 何を食べた？
+        - 食べ物はどうだった？
+    intent:
+      correct: What is your favorite ...?
+      near:
+        - Do you ...?
+        - How was ...?
+        - I like ...
+    form:
+      near:
+        - What food do you eat?
+        - What's your food favorite?
+        - Do you like food?
+  status: active
+- key: QUESTION_PAST_DID
+  code: P1-012
+  form: Did you {verb_phrase}?
+  meaning: 過去の行動を質問する
+  intent: PAST_YES_NO
+  tier: CORE
+  kind: pattern
+  example:
+    en: Did you sleep well?
+    ja: よく眠れた？
+  contrast_drill: true
+  quiz:
+    meaning:
+      near:
+        - よく眠る？
+        - 今よく眠ってる？
+        - よく眠ったことある？
+    intent:
+      correct: Did you ...?
+      near:
+        - Do you ...?
+        - Have you ever ...?
+        - Are you ...?
+    form:
+      near:
+        - Do you sleep well?
+        - Are you sleeping well?
+        - Have you ever slept well?
+  status: active
+- key: QUESTION_PRESENT_DO
+  code: P1-011
+  form: Do you {verb_phrase}?
+  meaning: 現在の習慣・事実を質問する
+  intent: PRESENT_YES_NO
+  tier: CORE
+  kind: pattern
+  example:
+    en: Do you drink coffee?
+    ja: コーヒーを飲む？
+  contrast_drill: true
+  quiz:
+    meaning:
+      near:
+        - コーヒーを飲んだ？
+        - 今コーヒーを飲んでる？
+        - コーヒーを飲みたい？
+    intent:
+      correct: Do you ...?
+      near:
+        - Did you ...?
+        - Have you ever ...?
+        - How was ...?
+    form:
+      near:
+        - Did you drink coffee?
+        - Are you drinking coffee?
+        - Are you drink coffee?
+  status: active
+- key: QUESTION_REASON_WHY
+  code: P1-015
+  form: Why {clause}?
+  meaning: 理由を質問する
+  intent: REASON_WHY
+  tier: CORE
+  kind: pattern
+  example:
+    en: Why were you late?
+    ja: なぜ遅れたの？
+  quiz:
+    meaning:
+      near:
+        - 遅れたのはいつ？
+        - どれくらい遅れたの？
+        - 遅れてもいい？
+    intent:
+      correct: Why ...?
+      near:
+        - How was ...?
+        - What does that mean?
+        - ... because ...
+    form:
+      near:
+        - Why are you late?
+        - Why did you late?
+        - What made you say late?
+  status: active
+- key: QUESTION_STATE_ARE
+  code: P1-013
+  form: Are you {state}?
+  meaning: 相手の状態を質問する
+  intent: STATE_YES_NO
+  tier: CORE
+  kind: pattern
+  example:
+    en: Are you free tomorrow?
+    ja: 明日空いてるの？
+  contrast_drill: true
+  quiz:
+    meaning:
+      near:
+        - 明日は暇だった？
+        - 明日何をするの？
+        - 明日は自由に使っていい？
+    intent:
+      correct: Are you ...?
+      near:
+        - Did you ...?
+        - How was ...?
+        - Have you ever ...?
+    form:
+      near:
+        - Were you free tomorrow?
+        - Do you free tomorrow?
+        - Is free tomorrow?
+  status: active
+- key: QUESTION_STATE_HOW
+  code: P1-016
+  form: How was {event_or_period}?
+  meaning: 出来事や期間の様子を質問する
+  intent: STATE_HOW
+  tier: CORE
+  kind: pattern
+  example:
+    en: How was your weekend?
+    ja: 週末はどうだった？
+  quiz:
+    meaning:
+      near:
+        - 週末は何をする？
+        - 週末はどこへ行った？
+        - 週末は好き？
+    intent:
+      correct: How was ...?
+      near:
+        - Why ...?
+        - Are you ...?
+        - What is your favorite ...?
+    form:
+      near:
+        - How is your weekend?
+        - What was your weekend?
+        - How will your weekend be?
+  status: active

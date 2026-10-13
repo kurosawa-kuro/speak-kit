@@ -131,3 +131,37 @@ git log --follow --oneline src/lib/dispatch.mjs | head
 ## Notes
 
 - コード内の相対パスは書き換え不要と見ているが、`npm test` と `npx next build` で確認するまでは確定扱いにしない。
+
+## Evidence（2026-10-13）
+
+`npm test` と画面からの回答は DB へ書く。Limits の「`speak_kit` への書き込み 0」を守るため、DB を写した一時的な Postgres（`/tmp`、port 5544。DB 名は `speak_kit`）へ `SPEAK_KIT_DATABASE_URL` で向けて実行した。観測のあと削除した。実 DB の行数は、作業の前後とも回答 65 件・クイズ回答 31 件で変わっていない。
+
+- 移動前: `npm test` は 8 件 pass。`npx next build` のルートは `/`、`/_not-found`、`/api/[name]`、`/api/ai/feedback`、`/api/ai/grade`、`/api/ai/scenario`、`/api/ai/status`、`/api/ai/talk`。
+- 移動: `git mv` で `app`、`lib`、`test` を `src/` へ移し、fixture を `src/test/fixtures/` へ移した。`src/testdata/` は無くなった。
+  - Git は 47 件を rename と見ている。`src/test/ai-isolation.test.mjs` は書き換えたので 93%、ほかは 100%。
+  - 移動前の `git log --follow -- lib/dispatch.mjs` は 0061e1e・08f46c8・86230b1…。コミット後は `src/lib/dispatch.mjs` から辿れる。コミットは owner の指示待ち。
+- 書き換え:
+  - `package.json` の `test` を `node --test src/test/*.test.mjs` にした。
+  - `ai-isolation` の検査文字列を `ai/client` にした（core の 4 ファイルに該当なし）。
+- 移動後:
+  - `npm test` は移動前と同じ 8 件 pass。
+  - `npx next build` のルートは移動前と同じ 8 本で、サイズも同じ。`src/test/` 由来のルートは無い。
+- `npm run dev`（キー無し、写しの DB）で today → quiz → submit → progress を通した。移動前後の差は、出たクイズの種類だけ（前の回で答えたぶん次の問題に進んだ）。
+  - `GET /` は 200。
+  - today: 5 項目、応答のキーは同じ。
+  - quiz: 4 択。
+  - submit: `ok`、約 30ms。
+  - progress: 表現 50、応答のキーは同じ。
+  - `/api/ai/status` は `{"aiEnabled":false}`。
+- 移動後に、いつもの dev server（キーは `AI_ANTHROPIC_API_KEY` だけを渡す）を実 DB で立て直した。
+  - 今日の画面は、Tailwind のスタイル付きで前と同じに表示された。
+  - `/api/ai/status` は `{"aiEnabled":true}`。
+  - today は計画 b2af25d8 を返した。
+- 配置: repo 直下に `app`、`lib`、`test` は無い。`src/` の下は `app`、`lib`、`test` だけ。`.rs` ファイルは 0 件。
+- ドキュメント:
+  - `README.md`、`CLAUDE.md`、`docs/01_requirements.md`、`docs/02_architecture.md`、`docs/07_test_strategy.md`、`docs/英会話アプリ-コミュニティ配布を先に作り次段階へコピーする.md`、`02_backlog/` の 2 本を `src/` 付きに直した。
+  - 参照元のパスは「参照元の `src/...`」と書き分け、`docs/02_architecture.md` の参照元の表には注記を付けた。
+  - AI の判定の例（`lib/ai/isEnabled.ts`、`hasAnthropicKey`）は、実際の `src/lib/ai/isEnabled.mjs` の `aiEnabled()` に直した。
+  - 配置の約束は `docs/02_architecture.md` の「配置」に 1 か所だけ書いた。
+  - `settings-screen.md` は、もう無い `practice/drill.js` と `SCREENS` の記述を、今の `train.js`・`talk.js`・`TABS` に直した。
+- Plan 8 の検索: 残るのは `package.json` の新しい値 `src/test/*.test.mjs`（検索式に当たるだけ）と、`05_done/` の当時の記録だけ。

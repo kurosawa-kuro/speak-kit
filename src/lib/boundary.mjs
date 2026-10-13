@@ -190,7 +190,7 @@ export async function noticeForAttempt(attemptId) {
   return pairId ? pairNotice(pairId) : null
 }
 
-export async function duePractice(aiAvailable) {
+export async function duePractice(availability) {
   const notice = await nextDueNotice()
   if (!notice) return null
   const probe = notice.probe
@@ -216,7 +216,7 @@ export async function duePractice(aiAvailable) {
       confusionProbeId: probe.probeId,
     },
     confusion: notice,
-    aiAvailable,
+    ...availability,
   }
 }
 

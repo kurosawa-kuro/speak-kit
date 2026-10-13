@@ -20,7 +20,7 @@ live の毎日の学習は private-ops 内の `skill-trainer` に残す。次の
 
 ## 参照元アプリ
 
-実装時の参照元は `/Users/kurosawa/Dev/private-ops/apps/skill-trainer` である。挙動、`sql/postgres/`、`src/domains/` の文言は限りなくコピーで済ませる。Rust の API（`dispatch` を含む `src/*.rs`）は、フル Next.js では crate のまま動かせないので、同じ挙動を Next.js API Routes へ書き直す。live の Postgres、Retool、`DB_FLOW_URL` には接続しない。
+実装時の参照元は `/Users/kurosawa/Dev/private-ops/apps/skill-trainer` である。挙動、`sql/postgres/`、参照元の `src/domains/` の文言を土台にし、そこから改良する（2026-10-13 owner。それまでは「限りなくコピーする」方針だった）。最初の改良は設定画面である。Rust の API（`dispatch` を含む参照元の `src/*.rs`）は、フル Next.js では crate のまま動かせないので、同じ挙動を Next.js API Routes へ書き直す。live の Postgres、Retool、`DB_FLOW_URL` には接続しない。
 
 障害修正以外、エンジンのコード、マイグレーション、Retool publish を live に出さない。二つの開発・デプロイ・スキーマ変更は、今日の計画・回答・Evidence を止めない。
 
@@ -63,7 +63,7 @@ owner 決定（2026-10-11）: 渡した相手のアカウント（API キー、�
 
 公開範囲とは、そのインスタンスを誰が使えるか、である。決定は一人だけのプライベートアプリである。同じインスタンスを他人に開かない。目的は AI キーの悪用防止である。知人への配布は、各自が自分の一人用インスタンスを立てる形である。
 
-- キー有無は 1 箇所で算出する（例: `lib/ai/isEnabled.ts` の `hasAnthropicKey`）。全 AI 関連ルートとコンポーネントはそこだけを参照する。クライアントにはキーの有無を晒さず、サーバーが `aiEnabled: boolean` を返す。
+- AI を使えるかは、設定とキーの有無から 1 箇所で算出する（`src/lib/ai/isEnabled.mjs` の `aiStatus()` / `aiEnabled()`）。設定は画面の「設定」タブで変え、`skill_trainer.learner_settings` に保存する。設定が「使わない」なら、キーがあっても Anthropic へ接続しない。全 AI 関連ルートとコンポーネントはそこだけを参照する。クライアントにはキーの値を晒さず、サーバーが `aiEnabled`、キーの設定済み／未設定、使えない理由（設定でオフ／キー未設定）を返す。
 - コア機能の API route は AI クライアントを import しない。AI 機能は別エンドポイントに隔離する。
 - AI 呼び出しは try/catch に置く。失敗時は構造化エラーを返し、プロセスとリクエストは落とさない。
 - UI は Error Boundary で AI セクションを囲む。AI 無効時は disabled 表示と「Anthropic キーを設定すると使えます」の案内に差し替える。
@@ -94,6 +94,18 @@ make setup    # 依存取得 + ビルド（現状は TODO）
 make dev      # 開発サーバー起動（現状は TODO）
 make test     # テスト（現状は TODO）
 ```
+
+### 教材の管理
+
+教材（表現・練習問題・クイズ・混同ペア）は [`data/`](data/README.md) の YAML で管理する。書き方は `data/README.md` にある。YAML を直したら、次の順で DB へ反映する。
+
+```bash
+npm run data:check              # 書き間違いの検査だけ（DB に触らない）
+npm run data:sync               # DB との差分を見る（DB は変えない）
+npm run data:sync -- --apply    # 反映する
+```
+
+画面から増えた教材（会話の候補の承認、混同ペアの登録）は DB に入る。`npm run data:export` で YAML に取り込める。
 
 ハーネスの非機密設定は `env/config.yaml`、ローカル秘密情報は `env/secret.yaml`、チーム共有は Doppler（`doppler.yaml`）。配布先の実行時秘密（Supabase、任意の Anthropic キー）は、各自の Vercel と Supabase に置く。開発中の `speak-next` を含め、live の学習者データベースへは書かない。
 

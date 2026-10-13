@@ -1,0 +1,85 @@
+# 表現の教材。書き方は data/README.md。key と code は一度決めたら変えない。
+- key: MEANING_CLARIFICATION
+  code: P1-029
+  form: What does that mean?
+  meaning: 意味を確認する
+  intent: MEANING_CHECK
+  tier: CORE
+  kind: atomic_chunk
+  example:
+    en: What does that mean?
+    ja: それはどういう意味？
+  quiz:
+    meaning:
+      near:
+        - もう一度言ってもらえますか？
+        - それはなぜ？
+        - あなたはどういうつもりで言ったの？
+    intent:
+      correct: What does that mean?
+      near:
+        - Could you say that again?
+        - How about you?
+        - Why ...?
+    form:
+      near:
+        - What do you mean?
+        - What did you say?
+        - How do you say that?
+  status: active
+- key: MEANING_CONFIRMATION
+  code: P1-030
+  form: Do you mean {interpretation}?
+  meaning: 理解が合っているか確認する
+  intent: CONFIRMATION
+  tier: CORE
+  kind: pattern
+  example:
+    en: Do you mean the meeting is canceled?
+    ja: つまり会議は中止という意味？
+  quiz:
+    meaning:
+      near:
+        - 会議は中止になりましたか？
+        - 会議は中止と言いましたか？
+        - 会議を中止してもらえますか？
+    intent:
+      correct: Do you mean ...?
+      near:
+        - Could you say that again?
+        - Why ...?
+        - How about you?
+    form:
+      near:
+        - Did you cancel the meeting?
+        - Was the meeting canceled?
+        - Could you cancel the meeting?
+  status: active
+- key: REPEAT_REQUEST
+  code: P1-028
+  form: Could you say that again?
+  meaning: 聞き取れない時に繰り返しを依頼する
+  intent: REPEAT_REQUEST
+  tier: CORE
+  kind: atomic_chunk
+  example:
+    en: Could you say that again?
+    ja: もう一度言ってもらえますか？
+  quiz:
+    meaning:
+      near:
+        - もう一度説明してもらえますか？
+        - もう一度言ってもいいですか？
+        - それはどういう意味ですか？
+    intent:
+      correct: Could you say that again?
+      near:
+        - What does that mean?
+        - Could I ...?
+        - How about you?
+    form:
+      near:
+        - Could you explain that again?
+        - Could I say that again?
+        - Could you tell that again?
+  status: active

@@ -1,0 +1,291 @@
+# 表現の教材。書き方は data/README.md。key と code は一度決めたら変えない。
+- key: CAUSE_THATS_WHY
+  code: P1-006
+  form: That's why {result}.
+  meaning: 理由を受けて結論を述べる
+  intent: CONCLUSION_REASON
+  tier: CORE
+  kind: pattern
+  example:
+    en: That's why I started learning English.
+    ja: だから僕は英語を勉強し始めたんだ。
+  quiz:
+    meaning:
+      near:
+        - 英語を勉強し始めたのは、なぜだろう。
+        - 僕の場合は英語を勉強し始めた。
+        - 英語を勉強し始めるしかなかった。
+    intent:
+      correct: That's why ...
+      near:
+        - ... because ...
+        - In my case, ...
+        - I had no choice but to ...
+    form:
+      near:
+        - Because I started learning English.
+        - That's because I started learning English.
+        - I started learning English because that.
+  status: active
+- key: CORRECTION_MEAN
+  code: P1-010
+  form: I don't mean {a}. I mean {b}.
+  meaning: 誤解を訂正する
+  intent: CORRECTION
+  tier: CORE
+  kind: pattern
+  example:
+    en: I don't mean today. I mean tomorrow.
+    ja: 今日という意味じゃない。明日という意味。
+  quiz:
+    meaning:
+      near:
+        - 今日ではなく明日と言いましたか？
+        - 昔は今日だったが、今は明日だ。
+        - 今日も明日も大丈夫という意味。
+    intent:
+      correct: I don't mean ... I mean ...
+      near:
+        - Do you mean ...?
+        - What does that mean?
+        - I used to ..., but now ...
+    form:
+      near:
+        - I don't say today. I say tomorrow.
+        - Do you mean today or tomorrow?
+        - It doesn't mean today. It means tomorrow.
+  status: active
+- key: DESIRE_WANT_TO
+  code: P1-003
+  form: I want to {verb_phrase}.
+  meaning: したいことを述べる
+  intent: DESIRE
+  tier: CORE
+  kind: pattern
+  example:
+    en: I want to improve my English.
+    ja: 英語を上達させたいです。
+  quiz:
+    meaning:
+      near:
+        - 英語を上達させる予定です。
+        - 英語が上達しました。
+        - 英語を上達させるのが好きです。
+    intent:
+      correct: I want to ...
+      near:
+        - I like ...
+        - I am going to ...
+        - I usually ...
+    form:
+      near:
+        - I'm going to improve my English.
+        - I like improving my English.
+        - I improved my English.
+  status: active
+- key: DURATION_IT_TOOK
+  code: P1-005
+  form: It took me {duration} to {verb_phrase}.
+  meaning: 所要時間を述べる
+  intent: HISTORY
+  tier: CORE
+  kind: pattern
+  example:
+    en: It took me a long time to finish this project.
+    ja: このプロジェクトを終えるまで長い時間がかかった。
+  quiz:
+    meaning:
+      near:
+        - このプロジェクトを長い間続けている。
+        - このプロジェクトを終えるしかなかった。
+        - このプロジェクトを終える時間がない。
+    intent:
+      correct: It took me ... to ...
+      near:
+        - I had no choice but to ...
+        - I usually ...
+        - I have been to ...
+    form:
+      near:
+        - I took a long time finish this project.
+        - It takes me a long time to finish this project.
+        - I had no choice but to finish this project.
+  status: active
+- key: NO_CHOICE_BUT
+  code: P1-008
+  form: I had no choice but to {verb_phrase}.
+  meaning: 他に選択肢がなかったことを述べる
+  intent: NO_CHOICE
+  tier: CORE
+  kind: pattern
+  example:
+    en: I had no choice but to cancel the meeting.
+    ja: 会議をキャンセルするしかなかった。
+  quiz:
+    meaning:
+      near:
+        - 会議をキャンセルしたくなかった。
+        - 会議をキャンセルする選択肢があった。
+        - 会議をキャンセルする予定だ。
+    intent:
+      correct: I had no choice but to ...
+      near:
+        - I want to ...
+        - That's why ...
+        - I used to ..., but now ...
+    form:
+      near:
+        - I had no choice but cancel the meeting.
+        - I didn't have to cancel the meeting.
+        - I chose to cancel the meeting.
+  status: active
+- key: PAST_VS_NOW
+  code: P1-009
+  form: I used to {past}, but now {present}.
+  meaning: 過去と現在を対比する
+  intent: PAST_VS_NOW
+  tier: CORE
+  kind: pattern
+  example:
+    en: I used to live in Osaka, but now I live in Tokyo.
+    ja: 昔は大阪に住んでいた。でも今は東京に住んでいる。
+  quiz:
+    meaning:
+      near:
+        - 普段は大阪に住んでいるが、今は東京にいる。
+        - 大阪にも東京にも住んだことがある。
+        - 大阪に住む予定だったが、東京に住んでいる。
+    intent:
+      correct: I used to ..., but now ...
+      near:
+        - I usually ...
+        - I ... yesterday.
+        - I am ...ing now.
+    form:
+      near:
+        - I usually live in Osaka, but now I live in Tokyo.
+        - I am used to living in Osaka, but now I live in Tokyo.
+        - I use to live in Osaka, but now I live in Tokyo.
+  status: active
+- key: PERSONAL_CASE
+  code: P1-007
+  form: In my case, {statement}.
+  meaning: 自分の場合を述べる
+  intent: PERSONAL_CASE
+  tier: CORE
+  kind: pattern
+  example:
+    en: In my case, I work from home.
+    ja: 僕の場合は家で仕事をしている。
+  quiz:
+    meaning:
+      near:
+        - あなたは家で仕事をしていますか？
+        - 僕は家で仕事をするしかない。
+        - 僕は家で仕事をしたい。
+    intent:
+      correct: In my case, ...
+      near:
+        - How about you?
+        - I am ...
+        - That's why ...
+    form:
+      near:
+        - In my case, I worked from home.
+        - How about you? I work from home.
+        - In case, I work from home.
+  status: active
+- key: PREFERENCE_LIKE_GERUND
+  code: P1-002
+  form: I like {activity}.
+  meaning: 好みを述べる
+  intent: PREFERENCE
+  tier: CORE
+  kind: pattern
+  example:
+    en: I like watching movies.
+    ja: 映画を見るのが好きです。
+  quiz:
+    meaning:
+      near:
+        - 映画を見たいです。
+        - 映画を見ています。
+        - 映画を見たことがあります。
+    intent:
+      correct: I like ...
+      near:
+        - I want to ...
+        - I usually ...
+        - I have been to ...
+    form:
+      near:
+        - I want to watch movies.
+        - I'm watching movies.
+        - I like watch movies.
+  status: active
+- key: REASON_BECAUSE
+  code: P1-004
+  form: "{result} because {reason}."
+  meaning: 理由を添えて述べる
+  intent: REASON
+  tier: CORE
+  kind: pattern
+  example:
+    en: I'm tired because I worked all night.
+    ja: 一晩中作業したので疲れています。
+  quiz:
+    meaning:
+      near:
+        - 疲れているので一晩中作業しました。
+        - 一晩中作業したが疲れていません。
+        - 疲れたので一晩中休みました。
+    intent:
+      correct: ... because ...
+      near:
+        - That's why ...
+        - Why ...?
+        - In my case, ...
+    form:
+      near:
+        - I worked all night because I'm tired.
+        - I'm tired. That's why I worked all night.
+        - I'm tired so I worked all night.
+  status: active
+- key: SELF_DESCRIPTION_BE
+  code: P1-001
+  form: I am {role_or_state}.
+  meaning: 自分の役割・状態を述べる
+  intent: SELF_DESCRIPTION
+  tier: CORE
+  kind: pattern
+  example:
+    en: I'm a software engineer.
+    ja: 私はソフトウェアエンジニアです。
+  quiz:
+    meaning:
+      near:
+        - 私はソフトウェアエンジニアになりたい。
+        - 私はソフトウェアエンジニアだった。
+        - 私はソフトウェアエンジニアが好きです。
+    intent:
+      correct: I am ...
+      near:
+        - I like ...
+        - In my case, ...
+        - I am ...ing now.
+    form:
+      near:
+        - I'm software engineer.
+        - I do a software engineer.
+        - I was a software engineer.
+  status: active
+- key: FREEZE_2
+  form: I don't know
+  meaning: 停止した場面
+  tier: TIER1
+  kind: pattern
+  extra_examples:
+    - key: CANDIDATE-2-CR
+      en: I don't know
+      ja: わからないとき、英語で言う
+  status: retired

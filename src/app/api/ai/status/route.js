@@ -1,5 +1,8 @@
-import { aiEnabled } from "../../../../lib/ai/isEnabled.mjs"
+import { aiStatus } from "../../../../lib/ai/isEnabled.mjs"
 
-export function GET() {
-  return Response.json({ aiEnabled: aiEnabled() })
+export const dynamic = "force-dynamic"
+
+export async function GET() {
+  const { aiEnabled, keyConfigured, setting, reason } = await aiStatus()
+  return Response.json({ aiEnabled, keyConfigured, setting, reason })
 }

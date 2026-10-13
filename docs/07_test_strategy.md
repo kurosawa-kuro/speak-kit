@@ -23,7 +23,7 @@ git diff --check
 
 着手した場合の確認順:
 
-1. `lib/ai/client.ts`（キー無しなら `null`）と `lib/ai/isEnabled.ts` を雛形の最初に置く。
+1. `src/lib/ai/client.mjs`（キー無しなら呼ばずに `ai_unavailable`）と `src/lib/ai/isEnabled.mjs` を雛形の最初に置く。
 2. コアを先に実装し、`ANTHROPIC_API_KEY` を unset にした環境で通し確認する。
 3. AI 機能を後から追加し、キーを外した状態でコアが壊れていないことを毎回確認する。
 4. disabled 表示と案内文を確認する。
