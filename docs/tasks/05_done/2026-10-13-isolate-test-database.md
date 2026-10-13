@@ -13,7 +13,7 @@
 
 ## Context
 
-- 出どころ: `02_backlog/実運用可能な状況かをレビュー依頼.md` の R2。
+- 出どころ: `05_done/実運用可能な状況かをレビュー依頼.md` の R2。
 - `src/test/golden-path.test.mjs` と `src/test/settings.test.mjs` は、`src/lib/db.mjs` の `pool` を通して、本物の `speak_kit` に `dispatch` を呼んでいる。
 - 1 回の `npm test` で書き込まれるもの:
   - クイズの回答（回答時間 12 ミリ秒）

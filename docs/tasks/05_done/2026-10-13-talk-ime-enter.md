@@ -13,7 +13,7 @@
 
 ## Context
 
-- 出どころ: `02_backlog/実運用可能な状況かをレビュー依頼.md` の R6。
+- 出どころ: `05_done/実運用可能な状況かをレビュー依頼.md` の R6。
 - `src/app/screens/talk.js:202-204`:
 
   ```js

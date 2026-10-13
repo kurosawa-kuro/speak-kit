@@ -73,7 +73,7 @@
 | [05_done/2026-10-13-isolate-test-database.md](05_done/2026-10-13-isolate-test-database.md) | `npm test` を毎回作り直すテスト用 DB `speak_kit_test` に向けた。2 回流して本物の `speak_kit` の全 30 表の件数と設定は変わらなかった。既に入った偽の行は DB の作り直しで捨てる |
 | [05_done/2026-10-13-commit-and-push.md](05_done/2026-10-13-commit-and-push.md) | 変更を意味のあるメッセージでコミットし、GitHub に送った。`wip` のコミットは書き直さずに送った。コミットメッセージの決まりを `AGENTS.md` と `CLAUDE.md` に足した |
 | [05_done/2026-10-13-talk-ime-enter.md](05_done/2026-10-13-talk-ime-enter.md) | 会話画面と混同ペアの登録欄で、日本語入力の変換を確定する Enter では送信しないようにした。Safari の実機確認は owner に残る |
-| [02_backlog/実運用可能な状況かをレビュー依頼.md](02_backlog/実運用可能な状況かをレビュー依頼.md) | ローカルで一人が毎日使えるかのレビュー。まだ不可。バックアップ無し、テストが本物の記録を汚す、LAN に開いている、再起動で動かない、未コミット、日本語入力の Enter で送信、の 6 つ。R2・R5・R6 は直した。R1・R3・R4 は owner 判断で見送り |
+| [05_done/実運用可能な状況かをレビュー依頼.md](05_done/実運用可能な状況かをレビュー依頼.md) | ローカルで一人が毎日使えるかのレビュー。R2・R5・R6 と、使い始めてからの H1〜H9 は直した（H の多くはリファクタリングの各段）。R1（バックアップ）・R3（LAN に開いている）・R4（Postgres の自動起動）は owner 判断で見送り。再検討はこのファイルから |
 | [05_done/2026-10-13-architecture-refactor-db-first.md](05_done/2026-10-13-architecture-refactor-db-first.md) | 設計レベルのリファクタリング。第 1〜5 段を実施した。バグ 9 件の修正、DB の作り直し（baseline 1 本・教材と学習記録の分離・AI の使用額）、サーバーの層の分離（操作の文脈・AI の利用上限 1 日 2 ドル／1 か月 20 ドル・後回しの採点）、画面の実ルート化（`/today` ほか）、本番ビルドの起動と文書の書き直し。テスト 42 件。R3・R4 は owner 判断で見送り |
 | [05_done/2026-10-13-local-text-golden-path.md](05_done/2026-10-13-local-text-golden-path.md) | 参照元の SQL 28 本と dispatch 16 名をローカル Postgres `speak_kit` へ写し、キー無しの choice 経路を通した |
 | [03_active/refactoring-candidates.md](03_active/refactoring-candidates.md) | 残りのクリーンアップ候補 |

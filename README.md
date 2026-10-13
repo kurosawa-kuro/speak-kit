@@ -120,7 +120,7 @@ doppler run -p apps -c dev --only-secrets AI_ANTHROPIC_API_KEY -- \
   sh -c 'export ANTHROPIC_API_KEY="$AI_ANTHROPIC_API_KEY"; unset AI_ANTHROPIC_API_KEY; exec npm run start'
 ```
 
-想定外のエラーは `logs/server-errors.log` に 1 行ずつ残る（git には入れない）。Postgres の自動起動と、LAN から開けないようにすることは、まだ決めていない（`docs/tasks/02_backlog/実運用可能な状況かをレビュー依頼.md` の R3・R4）。
+想定外のエラーは `logs/server-errors.log` に 1 行ずつ残る（git には入れない）。Postgres の自動起動と、LAN から開けないようにすることは、まだ決めていない（`docs/tasks/05_done/実運用可能な状況かをレビュー依頼.md` の R3・R4）。
 
 ### 教材の管理
 
