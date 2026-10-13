@@ -4,11 +4,13 @@
   "type": "module",
   "scripts": {
     "dev": "next dev -p 3000",
-    "start": "next start -p 3000",
-    "test": "sh scripts/reset-test-db.sh && SPEAK_KIT_DATABASE_URL=postgresql://kurosawa@localhost:5432/speak_kit_test node --test src/test/*.test.mjs",
+    "build": "NEXT_DIST_DIR=.next-build next build",
+    "start": "NEXT_DIST_DIR=.next-build next start -p 3000",
+    "test": "sh scripts/reset-test-db.sh && SPEAK_KIT_DATABASE_URL=postgresql://kurosawa@localhost:5432/speak_kit_test node --test --test-concurrency=1 src/test/*.test.mjs",
     "data:check": "node src/cli/data.mjs check",
     "data:sync": "node src/cli/data.mjs sync",
-    "data:export": "node src/cli/data.mjs export"
+    "data:export": "node src/cli/data.mjs export",
+    "db:apply": "sh scripts/db-apply.sh speak_kit"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.3",

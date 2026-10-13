@@ -1,6 +1,6 @@
 # 06 エラー方針
 
-出典はアイディアノートの「AI 機能の安全設計」。対象は、切り出し先 Next.js アプリの API Routes と UI である。アプリ本体は未着手。
+出典はアイディアノートの「AI 機能の安全設計」。対象は、speak-kit の API Routes と UI である。RPC の入口（`src/app/api/[name]/route.js`）は、入力の誤りを 400、見つからないものを 404、想定外の例外を 500 で返し、500 は `logs/server-errors.log` に 1 行残す。
 
 ## エラー分類
 

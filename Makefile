@@ -1,39 +1,33 @@
-.PHONY: setup build run dev test fmt lint clean
+.PHONY: setup dev build start test db data-check data-sync
 
-# Application
-APP_NAME := <your-project>
+# 依存を入れ、DB の形を当て、教材を入れる（何度流しても同じ結果になる）
+setup:
+	npm install
+	sh scripts/db-apply.sh speak_kit
+	npm run data:sync -- --apply
 
-# 初期セットアップ (依存取得・ビルド)
-setup: deps build
-	@echo "Setup complete."
-
-deps:
-	@echo "TODO: 依存をインストール (例: npm install / cargo fetch / pip install -r requirements.txt)"
-
-# ビルド
-build:
-	@echo "TODO: ビルドコマンドを記述"
-
-# 実行
-run:
-	@echo "TODO: 実行コマンドを記述"
-
-# 開発 (ホットリロード)
+# 開発サーバー（コードを直しながら使う。出力先は .next）
 dev:
-	@echo "TODO: 開発サーバー / watch コマンドを記述"
+	npm run dev
 
-# テスト
+# 本番ビルド（出力先は .next-build。開発サーバーを動かしたままでも流せる）
+build:
+	npm run build
+
+# 本番ビルドで起動する（毎日使うとき。先に make build）
+start:
+	npm run start
+
+# テスト（毎回作り直す speak_kit_test に向けて流す）
 test:
-	@echo "TODO: テストコマンドを記述"
+	npm test
 
-# 整形
-fmt:
-	@echo "TODO: フォーマッタを記述"
+# DB の形（sql/migrations）を speak_kit に当てる
+db:
+	sh scripts/db-apply.sh speak_kit
 
-# 静的解析
-lint:
-	@echo "TODO: リンタを記述"
+data-check:
+	npm run data:check
 
-# クリーンアップ
-clean:
-	@echo "TODO: 成果物削除コマンドを記述"
+data-sync:
+	npm run data:sync

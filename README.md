@@ -63,10 +63,10 @@ owner 決定（2026-10-11）: 渡した相手のアカウント（API キー、�
 
 公開範囲とは、そのインスタンスを誰が使えるか、である。決定は一人だけのプライベートアプリである。同じインスタンスを他人に開かない。目的は AI キーの悪用防止である。知人への配布は、各自が自分の一人用インスタンスを立てる形である。
 
-- AI を使えるかは、設定とキーの有無から 1 箇所で算出する（`src/lib/ai/isEnabled.mjs` の `aiStatus()` / `aiEnabled()`）。設定は画面の「設定」タブで変え、`skill_trainer.learner_settings` に保存する。設定が「使わない」なら、キーがあっても Anthropic へ接続しない。全 AI 関連ルートとコンポーネントはそこだけを参照する。クライアントにはキーの値を晒さず、サーバーが `aiEnabled`、キーの設定済み／未設定、使えない理由（設定でオフ／キー未設定）を返す。
-- コア機能の API route は AI クライアントを import しない。AI 機能は別エンドポイントに隔離する。
-- AI 呼び出しは try/catch に置く。失敗時は構造化エラーを返し、プロセスとリクエストは落とさない。
-- UI は Error Boundary で AI セクションを囲む。AI 無効時は disabled 表示と「Anthropic キーを設定すると使えます」の案内に差し替える。
+- AI を使えるかは、1 回の操作の最初に 1 度だけ決める（`src/server/ai/context.mjs` の `operationContext()`）。決め手は、画面の「設定」タブの「AI を使う」（`skill_trainer.learner_settings`）、キーの有無、今日と今月の AI の使用額（`skill_trainer.ai_usage`）の 3 つである。設定が「使わない」なら、キーがあっても Anthropic へ接続しない。使えない理由は「設定でオフ」「キー未設定」「利用上限に達した」の 3 つで、画面に出す文言は `src/app/_lib/labels.js` の 1 か所にある。
+- AI の使用額は、応答の使ったトークン数から計算して残す。1 日 2 ドル・1 か月 20 ドル（`src/server/config.mjs`）に達すると、その日（その月）は AI を呼ばない。
+- AI は `src/server/ai/client.mjs` の 1 か所からだけ呼ぶ。クイズ・計画・RPC の振り分け・API route は AI クライアントを import しない（`src/test/ai-isolation.test.mjs`）。
+- AI の呼び出しは、DB のトランザクションの外で行う。失敗しても構造化したエラー（`ai_unavailable` など）を返し、プロセスとリクエストは落とさない。採点できなかった回答は「確認できませんでした」のまま残り、あとで再判定できる。
 
 受け入れ条件、着手順、未決（フレーズ素材、会話ログ、開発用インスタンス、Error Boundary の粒度、`aiEnabled` の再評価、失敗系テストの自動化）はアイディアノートの「speak-kit」節にある。この README から決めない。音声と公開範囲は決まっている。
 
@@ -76,24 +76,51 @@ owner 決定（2026-10-11）: 渡した相手のアカウント（API キー、�
 
 ## いまのディレクトリ
 
-アプリ本体は未着手。あるのは Thin Harness の足場である。
-
 ```text
 .
-├── env/                 # config.yaml（非機密）/ secret.yaml（ローカル秘密。コミット禁止）
-├── docs/                # ドキュメント。意図の台帳は docs/ 直下のアイディアノート
-├── .claude/             # Claude Code の rules / skills / hooks
-├── Makefile             # setup / dev / test などは足場。中身は未記入
-├── README.md
-├── CLAUDE.md
-└── AGENTS.md
+├── src/
+│   ├── app/                 # 画面（Next.js App Router）と API route
+│   │   ├── (main)/          # today / train / talk / records / settings の 5 画面。ヘッダーとタブは layout.js
+│   │   ├── _components/     # 画面の共通部品
+│   │   ├── _hooks/          # useRpc、採点待ちの問い合わせ、混同の確認問題
+│   │   ├── _lib/            # 文言（labels）、数の見せ方（format）、RPC の呼び出し
+│   │   └── api/[name]/      # RPC の入口。どの応答も同じ envelope
+│   ├── server/              # サーバーの処理
+│   │   ├── config.mjs       # 環境変数を読むのはここだけ（DB の接続先、AI のモデル・料金・上限など）
+│   │   ├── dispatch.mjs     # RPC 名 → サービス。操作の文脈（AI を使えるか）をここで 1 度だけ作る
+│   │   ├── services/        # 練習・回答・計画・会話・混同・候補・設定などの業務の処理
+│   │   ├── content/         # 教材の YAML の検査・導出・DB への書き込み・書き出し
+│   │   ├── ai/              # AI の窓口・プロンプト・採点・使用額
+│   │   ├── domain/          # DB も AI も使わない純粋な関数
+│   │   └── http/            # envelope、入力の検査、エラーログ
+│   ├── cli/data.mjs         # npm run data:*
+│   └── test/                # node --test
+├── data/                    # 教材の正本（YAML）
+├── sql/migrations/          # DB の形。scripts/db-apply.sh で当てる（sql/archive は元の 29 本）
+├── scripts/                 # db-apply.sh、reset-test-db.sh など
+├── docs/
+├── env/                     # config.yaml（非機密）/ secret.yaml（ローカル秘密。コミット禁止）
+└── Makefile
 ```
 
+### 起動
+
 ```bash
-make setup    # 依存取得 + ビルド（現状は TODO）
-make dev      # 開発サーバー起動（現状は TODO）
-make test     # テスト（現状は TODO）
+make setup    # 依存を入れ、DB の形を当て、教材を入れる（最初の 1 回。何度流してもよい）
+make build    # 本番ビルド（出力先は .next-build。開発サーバーと分けてある）
+make start    # 本番ビルドで起動する（http://localhost:3000）
+make dev      # 開発サーバーで起動する（コードを直しながら使うとき）
+make test     # テスト
 ```
+
+AI を使うときは、起動するシェルに `ANTHROPIC_API_KEY` を置く。黒澤の手元では Doppler から次のように渡す（`apps/dev` を丸ごと注入しない）。
+
+```bash
+doppler run -p apps -c dev --only-secrets AI_ANTHROPIC_API_KEY -- \
+  sh -c 'export ANTHROPIC_API_KEY="$AI_ANTHROPIC_API_KEY"; unset AI_ANTHROPIC_API_KEY; exec npm run start'
+```
+
+想定外のエラーは `logs/server-errors.log` に 1 行ずつ残る（git には入れない）。Postgres の自動起動と、LAN から開けないようにすることは、まだ決めていない（`docs/tasks/02_backlog/実運用可能な状況かをレビュー依頼.md` の R3・R4）。
 
 ### 教材の管理
 
@@ -122,4 +149,4 @@ npm run data:sync -- --apply    # 反映する
 - [`docs/04_workflows.md`](docs/04_workflows.md) — セットアップ、検証、運用フロー
 - [`docs/07_test_strategy.md`](docs/07_test_strategy.md) — テスト方針
 
-確定した範囲は [`docs/01_requirements.md`](docs/01_requirements.md) から [`docs/08_release_runbook.md`](docs/08_release_runbook.md) にある。未決と、今の作業順の外はアイディアノートに残す。アプリ本体は未着手である。先にローカルで Golden Path を通し、Vercel・①用 Supabase・配布用 GitHub は別ステップにする。
+確定した範囲は [`docs/01_requirements.md`](docs/01_requirements.md) から [`docs/08_release_runbook.md`](docs/08_release_runbook.md) にある。未決と、今の作業順の外はアイディアノートに残す。アプリはローカルの Postgres で動いている。Vercel・①用 Supabase・配布用 GitHub は別ステップにする。

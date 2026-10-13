@@ -9,29 +9,30 @@ make test
 git diff --check
 ```
 
-`make test` の中身は未記入である。アプリ着手時に、下の条件を実行できるコマンドへ置き換える。
+`make test` は `npm test`（`node --test --test-concurrency=1 src/test/*.test.mjs`）である。テストのファイルは設定の行（`learner_settings`）を共有するので、1 ファイルずつ流す。
 
 ## テストの DB
 
-`npm test` は、テスト用の DB `speak_kit_test` を毎回空から作り直してから流す（`scripts/reset-test-db.sh`。前提の role と表、`sql/postgres/*.sql`、`data/` の教材を入れる。画面から登録された混同ペアは入れない）。本物の `speak_kit` には書かない。DB に書くテストは `src/test/test-db.mjs` を最初に import し、接続先が `speak_kit_test` でなければ何も書かずに失敗する。
+`npm test` は、テスト用の DB `speak_kit_test` を毎回空から作り直してから流す（`scripts/reset-test-db.sh`。`scripts/db-apply.sh` で `sql/migrations` を当て、`data/` の教材を入れる）。本物の `speak_kit` には書かない。DB に書くテストは `src/test/test-db.mjs` を最初に import し、接続先が `speak_kit_test` でなければ何も書かずに失敗する。
 
 ## テスト範囲
 
-| 範囲 | コマンド | 備考 |
+| 範囲 | テスト | 備考 |
 |---|---|---|
-| コア（キー unset） | 未記入 | テキストのフレーズ練習と学習記録（お気に入り）を最初から最後まで完了できる。音声 UI は無い。利用者は一人 |
-| AI 無効時の UI | 未記入 | disabled と案内文になる。クラッシュ、白画面、未処理エラーが出ない |
-| キーの差し替え | 未記入 | 有効なキーのセッションから無効な値に変えても、コアの操作はエラーにならない |
-| AI 失敗の隔離 | 未記入 | 401 / 429 / timeout が、コア側の他の API のレスポンスに影響しない。自動化するかは未決 |
-| 結合 | 未記入 | コアの route が AI クライアントを import していないこと |
+| コア（キー unset） | `golden-path.test.mjs`、`settings.test.mjs`（choice path） | クイズと学習記録を、キー無しでも設定オフでも最後まで通す。音声 UI は無い。利用者は一人 |
+| AI を使えないとき | `settings.test.mjs`、`ai-isolation.test.mjs`、`grade.test.mjs` | 設定オフ・キー無し・利用上限で、Anthropic へ接続しない。一致しない回答は「未採点」で返る |
+| AI を待つ間のロック | `locks.test.mjs` | AI の応答を待つ間、会話の行をロックせず、トランザクションも開いたままにしない |
+| AI 失敗の隔離 | 手動 | 401 / 429 / timeout が、コア側の他の API のレスポンスに影響しない。自動化するかは未決 |
+| 結合 | `ai-isolation.test.mjs` | コアのファイル（quiz・plan・dispatch・API route）が AI クライアントを import していないこと |
+| 教材 | `content.test.mjs` | YAML の検査と導出が、DB の規則と同じ結果になること |
+| 修正の再発防止 | `fixes.test.mjs`、`domain.test.mjs`、`keys.test.mjs`、`names.test.mjs` | 再送・再判定・候補の承認・混同ペア・回答の見出し・日本語入力の Enter・RPC 名 |
 
-着手した場合の確認順:
+AI まわりを変えたときの確認順:
 
-1. `src/lib/ai/client.mjs`（キー無しなら呼ばずに `ai_unavailable`）と `src/lib/ai/isEnabled.mjs` を雛形の最初に置く。
-2. コアを先に実装し、`ANTHROPIC_API_KEY` を unset にした環境で通し確認する。
-3. AI 機能を後から追加し、キーを外した状態でコアが壊れていないことを毎回確認する。
-4. disabled 表示と案内文を確認する。
-5. 無効キーで 401 / 429 / timeout を起こし、コア側に影響が出ないか確認する。
+1. `ANTHROPIC_API_KEY` を unset にした環境で `npm test` を通す。
+2. キーを外した状態と設定オフで、画面のコアが壊れていないことを確認する。
+3. 使えない表示と案内文を確認する。
+4. 無効キーで 401 / 429 / timeout を起こし、コア側に影響が出ないか確認する。
 
 ## タスク完了条件
 

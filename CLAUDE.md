@@ -30,23 +30,24 @@
 ## コマンド
 
 ```bash
-make setup    # 初期セットアップ (依存取得 + ビルド)
-make build    # ビルド
-make run      # 実行
-make dev      # 開発サーバー / ホットリロード
-make test     # テスト
-make fmt      # フォーマット
-make lint     # 静的解析
+make setup       # 依存を入れ、DB の形を当て、教材を入れる
+make dev         # 開発サーバー（出力先 .next）
+make build       # 本番ビルド（出力先 .next-build）
+make start       # 本番ビルドで起動（ポート 3000）
+make test        # テスト（speak_kit_test を作り直して流す）
+make db          # sql/migrations を speak_kit に当てる
+make data-check  # data/ の YAML を検査
+make data-sync   # YAML と DB の差分を表示（反映は npm run data:sync -- --apply）
 ```
 
 ## アーキテクチャ
 
-アプリ本体は未着手。確定している製品の形は次のとおり。ディレクトリの切り方は着手時に決める。
+アプリはローカルの Postgres で動いている。構成は `docs/02_architecture.md`、DB の形は `docs/05_data_model.md`。製品の形は次のとおり。
 
 - フロントは Next.js（React）。バックエンドは Next.js API Routes。デプロイは Vercel。認証と DB は Supabase（Auth + Postgres）。
 - LLM は Claude API で任意。呼び出しはサーバー側 proxy のみ。クライアントに API キーを渡さない。
 - コア（テキストのフレーズ練習、学習記録・お気に入り）は Anthropic キー無しで最後まで通る。読み上げ、録音、STT、TTS は作らない。AI 機能は別エンドポイントに隔離し、コアの route は AI クライアントを import しない。
-- AI を使えるかは、設定（`learner_settings.ai_enabled`）とキー有無から 1 箇所（`src/lib/ai/isEnabled.mjs`）で算出する。設定がオフなら、キーがあっても Anthropic へ接続しない。サーバーはキーの値を返さず、`aiEnabled`、キーの設定済み／未設定、使えない理由だけを返す。401 / 429 / 5xx / timeout は該当 AI 呼び出しだけの失敗にする。
+- AI を使えるかは、設定（`learner_settings.ai_enabled`）とキー有無と AI の利用上限（1 日 2 ドル・1 か月 20 ドル）から、操作の文脈（`src/server/ai/context.mjs`）の 1 箇所で算出する。設定がオフなら、キーがあっても Anthropic へ接続しない。サーバーはキーの値を返さず、`aiEnabled`、キーの設定済み／未設定、使えない理由だけを返す。401 / 429 / 5xx / timeout は該当 AI 呼び出しだけの失敗にする。
 - 各自が自分の GitHub・Vercel・Supabase・任意の Anthropic キーでデプロイする。黒澤名義の課金・鍵・DB に相手の利用量を載せない。
 - ハーネスの非機密設定は `env/config.yaml`、ローカル秘密情報は `env/secret.yaml`、チーム共有は Doppler (`doppler.yaml`)。配布先の実行時秘密は各自の Vercel / Supabase に置く。
 - 設計・運用ドキュメントは `docs/` 配下。権威順位と更新規約は `docs/00_index.md` に従う。

@@ -1,6 +1,6 @@
 # 04 ワークフロー
 
-製品の手順は [01_requirements.md](./01_requirements.md) の Golden Path に従う。アプリ本体は未着手で、`make` の各ターゲットは足場である。
+製品の手順は [01_requirements.md](./01_requirements.md) の Golden Path に従う。アプリはローカルの Postgres で動いている。
 
 ## 着手順
 
@@ -29,7 +29,7 @@ make help
 make setup
 ```
 
-`make setup` / `make dev` / `make test` の中身は未記入である。アプリの依存導入コマンドは、着手時にこの Makefile へ書く。
+`make setup` は、依存を入れ、DB の形（`sql/migrations`）を `speak_kit` に当て、`data/` の教材を入れる。何度流しても同じ結果になる。毎日使うときは `make build` のあと `make start`、コードを直すときは `make dev`（[README.md](../README.md) の「起動」）。
 
 ## 作業開始
 

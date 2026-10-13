@@ -17,15 +17,19 @@ Codex は作業前にこのファイルを読むため、ここには repo 共�
 - 参照元: `/Users/kurosawa/Dev/private-ops/apps/skill-trainer`。挙動・SQL・ドメイン文言を土台にし、そこから改良する（2026-10-13 owner）。Rust API は Next.js API Routes へ書き直す。crate、Retool、ローカル Postgres、`DB_FLOW_URL` は実行基盤にしない
 - 作業順の外: 談話訓練、新しい Phase 番号、Phase 1 Gate の変更、Skill / Exercise の登録
 
-アプリ本体は未着手。`make` の各ターゲットは足場で、中身は未記入。
+アプリはローカルの Postgres で動いている。構成は `docs/02_architecture.md`、起動の手順は `README.md`。
 
 ## セットアップ / 主要コマンド
 
 ```bash
-make setup    # 依存取得 + ビルド
-make dev      # 開発サーバー
-make test     # テスト
-make fmt      # フォーマット
+make setup       # 依存を入れ、DB の形を当て、教材を入れる
+make dev         # 開発サーバー（出力先 .next）
+make build       # 本番ビルド（出力先 .next-build）
+make start       # 本番ビルドで起動（ポート 3000）
+make test        # テスト（speak_kit_test を作り直して流す）
+make db          # sql/migrations を speak_kit に当てる
+make data-check  # data/ の YAML を検査
+make data-sync   # YAML と DB の差分を表示（反映は npm run data:sync -- --apply）
 ```
 
 ## コーディング規約

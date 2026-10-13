@@ -258,7 +258,7 @@ YAML に 3 件の書き間違いがあります（DB は変えていません）
 
 ### 残る制限
 
-- アプリは、誤答から混同を検知すると、教材のペアの `source` を `observed_mistake` に書き換える（`because / that's why` は書き換わっている）。書き換わったペアは画面から増えたものとして扱うので、YAML で説明を直しても反映されず、お知らせだけが出る。教材の欄と学習の状態の欄を分ける話は、`02_backlog/2026-10-13-architecture-refactor-db-first.md` の DB の作り直しで扱う。
+- アプリは、誤答から混同を検知すると、教材のペアの `source` を `observed_mistake` に書き換える（`because / that's why` は書き換わっている）。書き換わったペアは画面から増えたものとして扱うので、YAML で説明を直しても反映されず、お知らせだけが出る。教材の欄と学習の状態の欄を分ける話は、`05_done/2026-10-13-architecture-refactor-db-first.md` の DB の作り直しで扱う。
 
 ### 作業中に起きたこと
 

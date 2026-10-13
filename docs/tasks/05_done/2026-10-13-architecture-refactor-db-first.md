@@ -698,3 +698,31 @@ migration の作り直し:
 見送ったもの:
 
 - 記録の画面（`records.js`）と会話の画面（`talk.js`）は、共通の部品に置き換えたが、ファイルは分けていない。
+
+### 第 5 段（2026-10-13 20 時台）
+
+やったこと:
+
+- 第 3 段の「AI を待つ間はロックを持たない」をテストにした（`src/test/locks.test.mjs`）。AI の応答を止めたまま会話を送り、その間に別の接続から会話の行を `FOR UPDATE NOWAIT` で取れること、`idle in transaction` の接続が 0 であることを確かめる。
+- テストのファイルが設定の行（`learner_settings`）を取り合って失敗することがあったので、`npm test` を 1 ファイルずつ流すようにした（`--test-concurrency=1`）。
+- 毎日の起動を開発モードから外した（G-5、H6・H7）。
+  - `npm run build` は `.next-build` に出す。開発サーバー（`.next`）を動かしたままでもビルドできる。
+  - `npm run start` は本番ビルドをポート 3000 で起動する。
+  - `Makefile` を中身のあるものにした: `setup`（依存・DB の形・教材）、`dev`、`build`、`start`、`test`、`db`、`data-check`、`data-sync`。
+- 文書を新しい形に書き直した。
+  - `README.md`: AI の扱い（操作の文脈・利用上限・トランザクションの外）、今のディレクトリ、起動の手順（Doppler からはキー 1 つだけ渡す）、`logs/` の置き場。
+  - `docs/02_architecture.md`: 全体の流れ、操作の文脈、後回しの採点、構成要素の表（`src/server` の層、App Router のルート）、境界。
+  - `docs/05_data_model.md`: baseline と `db-apply.sh`・`schema_migrations`、教材の表と学習の記録の表の分け方、`ai_usage`・`grading_claims`。
+  - `CLAUDE.md`・`AGENTS.md`・`docs/04_workflows.md`・`06_error_policy.md`・`07_test_strategy.md` から「未着手」「未記入」「`src/lib`」を消し、今のコマンドとテストの一覧にした。
+
+確かめたこと:
+
+- `npm test`（キー無し）: 42 件中 42 件が通った。
+- `npm run build`: 成功。ルートは `/`・`/today`・`/train`・`/talk`・`/records`・`/settings`・`/api/[name]`。
+- `next start -p 3100`（`.next-build`）: `/` が `/today` へ 307、5 画面が 200、設定の RPC が 200（キー無しで `aiReason: key_missing`、使用額と上限が返る）、知らない RPC は 404。確認のあと止めた。
+
+見送ったもの（owner 判断のまま、またはこの案の外）:
+
+- R3（LAN に開いている）と R4（Postgres の自動起動と再起動後の手順）は owner 判断で見送ったまま。`brew services` と `-H 127.0.0.1` は入れていない。
+- SQL をサービスから `repo/*` へ切り出すこと、読み取りの SQL に残る `'default'` を `learner_key` の引数にすること、計画の組み立てを純粋な関数にすること、記録の画面と会話の画面のファイル分け。
+- 確認で `speak_kit` に残った練習の回答 2 件とクイズの回答 1 件。
