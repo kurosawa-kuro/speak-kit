@@ -30,7 +30,10 @@ test("choice golden path does not require an AI key", async () => {
   const progress = await dispatch("skill_trainer_get_progress_v2", {})
   assert.equal(progress.ok, true)
   assert.ok(progress.data.skills.length > 0)
-  assert.ok(progress.data.quickQuiz.attempts >= 1)
+  assert.ok(progress.data.quickQuiz.itemCount >= 1)
+  const choiceGraded = [...progress.data.quickQuiz.pairs, ...progress.data.quickQuiz.skills]
+    .reduce((sum, entry) => sum + entry.choiceGraded, 0)
+  assert.ok(choiceGraded >= 1)
 
   const freeText = await dispatch("skill_trainer_submit_attempt_v2", {
     response_mode: "free_text",
