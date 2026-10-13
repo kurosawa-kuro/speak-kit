@@ -179,7 +179,9 @@ export function Records() {
               type="button"
               disabled={resetReview.loading}
               onClick={() => {
-                resetReview.trigger({}).then(() => {
+                setResetNote("")
+                resetReview.trigger({}).then((value) => {
+                  if (!value) return
                   setResetNote("再チェックを始めます。練習を開くと、覚えた問題から出ます。")
                   progress.trigger({})
                 })

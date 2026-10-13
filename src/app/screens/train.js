@@ -48,9 +48,12 @@ export function Train() {
   const pendingPayloads = useRef(new Map())
   const attemptContext = useRef(new Map())
   const pollBusy = useRef(false)
+  const answeredProbes = useRef(new Set())
 
   const loadPractice = (nextMode = mode, skillKey = null) => {
     setAnswer("")
+    submit.reset()
+    probeSubmit.reset()
     shownAt.current = Date.now()
     practice.trigger({ practice_id: uuid(), training_mode: nextMode, ...(skillKey ? { skill_key: skillKey } : {}) })
   }
@@ -105,7 +108,7 @@ export function Train() {
 
   useEffect(() => {
     const due = plan.data?.dueConfusion?.probe
-    if (!probeOverride && due?.probeId) {
+    if (!probeOverride && due?.probeId && !answeredProbes.current.has(due.probeId)) {
       setProbeOverride({ probeId: due.probeId, prompt: due.prompt, expectedReference: due.expectedReference })
     }
   }, [plan.data, probeOverride])
@@ -121,7 +124,7 @@ export function Train() {
     [plan.data, heldIds],
   )
   const exercise = planMode ? activePlanItem?.exercise : practice.data?.exercise
-  const incomingProbe = probeOverride ?? (exercise?.confusionProbeId
+  const incomingProbe = probeOverride ?? (exercise?.confusionProbeId && !answeredProbes.current.has(exercise.confusionProbeId)
     ? { probeId: exercise.confusionProbeId, prompt: String(exercise.prompt ?? ""), expectedReference: String(exercise.expectedReference ?? "") }
     : null)
   const capability = planMode ? activePlanItem?.capability : practice.data?.capability
@@ -130,7 +133,7 @@ export function Train() {
   const aiAvailable = planMode ? plan.data?.aiAvailable ?? true : practice.data?.aiAvailable ?? true
   const aiReason = planMode ? plan.data?.aiReason : practice.data?.aiReason
   const busy = plan.loading || practice.loading || submit.loading
-  const error = submit.error ?? (planMode ? plan.error : practice.error)
+  const error = submit.error ?? probeSubmit.error ?? (planMode ? plan.error : practice.error)
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -166,6 +169,7 @@ export function Train() {
         answer_text: typed,
       })
       if (!value) return
+      answeredProbes.current.add(incomingProbe.probeId)
       const success = value.outcome === "success"
       setNotices((current) => [
         {
@@ -322,7 +326,12 @@ export function Train() {
             <span>⚠</span>
             {uiErrorMessage(error, "練習問題を読み込めませんでした。もう一度お試しください。")}
           </div>
-          <button type="button" onClick={() => (planMode ? plan.trigger({}) : loadPractice(mode))} className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-neutral-800 text-sm font-semibold">
+          <button type="button" onClick={() => {
+            submit.reset()
+            probeSubmit.reset()
+            if (planMode) plan.trigger({})
+            else loadPractice(mode)
+          }} className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-neutral-800 text-sm font-semibold">
             ↻ 再試行
           </button>
         </div>
@@ -432,7 +441,8 @@ export function Train() {
             event.preventDefault()
             if (mixA.trim() === "" || mixB.trim() === "") return
             registerPair.trigger({ label_a: mixA.trim(), label_b: mixB.trim() }).then((value) => {
-              const nextProbe = value?.probe
+              if (!value) return
+              const nextProbe = value.probe
               if (nextProbe?.probeId) {
                 setProbeOverride({ probeId: nextProbe.probeId, prompt: nextProbe.prompt, expectedReference: nextProbe.expectedReference })
               }
@@ -449,6 +459,9 @@ export function Train() {
           <button type="submit" disabled={registerPair.loading || mixA.trim() === "" || mixB.trim() === ""} className="mt-3 flex h-11 w-full items-center justify-center rounded-md bg-neutral-800 text-sm font-semibold disabled:text-neutral-500">
             {registerPair.loading ? <Spinner size="h-4 w-4" /> : "違いを作って確認する"}
           </button>
+          {registerPair.error !== null && (
+            <p className="mt-2 text-sm text-amber-300">{uiErrorMessage(registerPair.error, "違いを作れませんでした。もう一度お試しください。")}</p>
+          )}
         </form>
       )}
     </>

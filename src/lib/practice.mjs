@@ -126,7 +126,7 @@ export async function getPractice(request) {
   if (!definition?.prompt || !definition.reference) {
     return envelope(false, "no_exercise", {}, { message: "このモードで、まだ正解していない問題はありません。正解済みは繰り返しません。覚えたものを出すには、記録の「覚えたものを再チェック」を押します。" })
   }
-  const materializationKey = hashParts(["free-practice", practiceId, mode, policyVersion])
+  const materializationKey = hashParts(["free-practice", practiceId, mode, skillKey || "", policyVersion])
   const instanceId = randomUUID()
   const renderedHash = hashParts([definition.prompt, definition.reference, JSON.stringify(definition.rubric), GENERATOR, policyVersion])
   await query(
@@ -152,28 +152,36 @@ export async function getPractice(request) {
     ],
   )
   const stored = await query(
-    `SELECT exercise_instance_id FROM skill_trainer.rendered_exercises WHERE materialization_key = $1`,
+    `SELECT re.exercise_instance_id, re.exercise_key, re.exercise_version, re.prompt, re.expected_reference,
+            ed.training_mode, ed.target_capability, ed.modality,
+            sc.stable_key, sc.canonical_form, sc.meaning, sc.category
+     FROM skill_trainer.rendered_exercises re
+     JOIN skill_trainer.exercise_definitions ed
+       ON ed.exercise_key = re.exercise_key AND ed.version = re.exercise_version
+     JOIN skill_trainer.skill_concepts sc ON sc.id = ed.target_skill_id
+     WHERE re.materialization_key = $1`,
     [materializationKey],
   )
+  const served = stored.rows[0]
   return envelope(true, "ok", {
     practiceId,
     source: "free_practice",
     policyVersion,
-    trainingMode: definition.training_mode,
-    capability: definition.target_capability,
+    trainingMode: served.training_mode,
+    capability: served.target_capability,
     skill: {
-      skillKey: definition.stable_key,
-      canonicalForm: definition.canonical_form,
-      meaning: definition.meaning,
-      category: definition.category,
+      skillKey: served.stable_key,
+      canonicalForm: served.canonical_form,
+      meaning: served.meaning,
+      category: served.category,
     },
     exercise: {
-      exerciseKey: definition.exercise_key,
-      exerciseVersion: definition.version,
-      exerciseInstanceId: stored.rows[0].exercise_instance_id,
-      prompt: definition.prompt,
-      expectedReference: definition.reference,
-      modality: definition.modality,
+      exerciseKey: served.exercise_key,
+      exerciseVersion: served.exercise_version,
+      exerciseInstanceId: served.exercise_instance_id,
+      prompt: served.prompt,
+      expectedReference: served.expected_reference,
+      modality: served.modality,
     },
     ...(await aiAvailability()),
   }, null)

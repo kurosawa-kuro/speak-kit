@@ -38,6 +38,7 @@ export function QuickQuiz({ onSpeak }) {
   const loadNext = (nextFilter = filter) => {
     setResult(null)
     setSelectedId(null)
+    answer.reset()
     next.trigger(nextFilter ? { quiz_type: nextFilter } : {}).then((value) => {
       if (!value) return
       setItem(value.item ?? null)

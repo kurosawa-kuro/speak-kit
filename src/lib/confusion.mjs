@@ -114,9 +114,9 @@ export async function registerPair(request) {
   return envelope(true, "ok", await pairNotice(pairId), null)
 }
 
-function probeEnvelope(probe, actual, success, notice) {
+function probeEnvelope(submissionId, probe, actual, success, notice) {
   return envelope(true, "ok", {
-    submissionId: notice.pairId,
+    submissionId,
     probeId: probe.probe_id,
     prompt: probe.prompt,
     actual,
@@ -141,7 +141,7 @@ export async function submitProbe(request) {
     [request.submission_id],
   )
   if (already.rows[0]) {
-    return probeEnvelope(probe, actual, already.rows[0].kind === "probe_success", await pairNotice(probe.pair_id))
+    return probeEnvelope(request.submission_id, probe, actual, already.rows[0].kind === "probe_success", await pairNotice(probe.pair_id))
   }
   const success = folded(probe.expected_text) === folded(actual)
   const attemptId = /^[0-9a-f-]{36}$/i.test(request.attempt_id || "") ? request.attempt_id : request.submission_id
@@ -197,5 +197,5 @@ export async function submitProbe(request) {
      WHERE pair_id = $1`,
     [probe.pair_id, success ? 1 : 0, success ? 0 : 1, streak, JSON.stringify(nextSides), days],
   )
-  return probeEnvelope(probe, actual, success, await pairNotice(probe.pair_id))
+  return probeEnvelope(request.submission_id, probe, actual, success, await pairNotice(probe.pair_id))
 }

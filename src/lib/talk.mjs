@@ -119,7 +119,7 @@ async function extractCandidates(scenario, contexts, existing) {
     if (typeof item?.pattern !== "string" || typeof item.meaning !== "string" || typeof item.category !== "string") {
       throw new Error("parse ai judge json")
     }
-    const hint = item.existing_candidate_id
+    const hint = item.existingCandidateId ?? item.existing_candidate_id
     return {
       pattern: item.pattern,
       meaning: item.meaning,
@@ -305,17 +305,24 @@ export async function sendTalkMessage(request) {
        VALUES ($1, $2, 'assistant', $3)`,
       [sessionId, userTurnIndex + 1, reply],
     )
-    const matched = await client.query(
-      `SELECT DISTINCT sc.id, sc.stable_key
+    const normalizedMessage = normalizeAnswer(message)
+    const references = await client.query(
+      `SELECT DISTINCT sc.id, sc.stable_key, reference.value AS reference
        FROM skill_trainer.skill_concepts sc
        JOIN skill_trainer.exercise_definitions ed ON ed.target_skill_id = sc.id
        CROSS JOIN LATERAL jsonb_array_elements_text(ed.reference_examples) reference(value)
        WHERE sc.status = 'active' AND ed.status = 'active'
-         AND sc.domain_id = (SELECT id FROM skill_trainer.domains WHERE code = $2)
-         AND lower(regexp_replace(btrim(reference.value), '[?.!]$', '')) = $1
+         AND sc.domain_id = (SELECT id FROM skill_trainer.domains WHERE code = $1)
        ORDER BY sc.stable_key`,
-      [normalizeAnswer(message), row.code],
+      [row.code],
     )
+    const matchedKeys = new Set()
+    const matched = { rows: [] }
+    for (const reference of references.rows) {
+      if (matchedKeys.has(reference.stable_key) || normalizeAnswer(reference.reference) !== normalizedMessage) continue
+      matchedKeys.add(reference.stable_key)
+      matched.rows.push({ id: reference.id, stable_key: reference.stable_key })
+    }
     const dimensions = {
       communication: classification.freeze ? "fail" : "pass",
       semantic: "not_observed",

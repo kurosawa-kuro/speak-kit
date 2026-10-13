@@ -591,15 +591,8 @@ export async function compareObservations(request) {
   }, null)
 }
 
-export async function regradeAttempt(request) {
-  const context = await loadAttemptContext(request.attempt_id)
-  if (!context) return envelope(false, "not_found", {}, { message: "attempt not found" })
-  const attemptId = request.attempt_id
-  const regradeId = request.regrade_id
-  const decision = await decide(context, context.actual)
-  const gradingKey = hashParts(["regrade", attemptId, regradeId, decision.source, decision.observerVersion])
-
-  const replay = await query(
+async function regradeReplay(db, gradingKey) {
+  const replay = await db.query(
     `SELECT go.grading_id, go.status, go.source, go.observer_version, go.dimension_results,
             go.reason, go.adopted_for_evidence, ce.evidence_id
      FROM skill_trainer.grading_observations go
@@ -607,35 +600,50 @@ export async function regradeAttempt(request) {
      WHERE go.idempotency_key = $1`,
     [gradingKey],
   )
-  const prior = replay.rows[0]
-  if (prior) {
-    const learned = await estimateAndDiagnosis(
-      context.target_skill_id,
-      context.target_capability,
-      context.policy_version,
-      prior.adopted_for_evidence && prior.evidence_id != null,
-    )
-    return envelope(true, "idempotent_replay", {
-      regradeId,
-      attemptId,
-      gradingId: prior.grading_id,
-      gradingStatus: prior.status,
-      graderSource: prior.source,
-      observerVersion: prior.observer_version,
-      dimensions: prior.dimension_results,
-      reason: prior.reason,
-      adoptedForEvidence: prior.adopted_for_evidence,
-      evidenceId: prior.evidence_id,
-      outcome: outcomeFromDimensions(prior.status, prior.dimension_results, context.rubric_snapshot),
-      expectedReference: context.expected_reference,
-      estimate: learned.estimate,
-      diagnosis: learned.diagnosis,
-    }, null)
-  }
+  return replay.rows[0] ?? null
+}
 
+async function regradeReplayEnvelope(context, regradeId, attemptId, prior) {
+  const learned = await estimateAndDiagnosis(
+    context.target_skill_id,
+    context.target_capability,
+    context.policy_version,
+    prior.adopted_for_evidence && prior.evidence_id != null,
+  )
+  return envelope(true, "idempotent_replay", {
+    regradeId,
+    attemptId,
+    gradingId: prior.grading_id,
+    gradingStatus: prior.status,
+    graderSource: prior.source,
+    observerVersion: prior.observer_version,
+    dimensions: prior.dimension_results,
+    reason: prior.reason,
+    adoptedForEvidence: prior.adopted_for_evidence,
+    evidenceId: prior.evidence_id,
+    outcome: outcomeFromDimensions(prior.status, prior.dimension_results, context.rubric_snapshot),
+    expectedReference: context.expected_reference,
+    estimate: learned.estimate,
+    diagnosis: learned.diagnosis,
+  }, null)
+}
+
+export async function regradeAttempt(request) {
+  const context = await loadAttemptContext(request.attempt_id)
+  if (!context) return envelope(false, "not_found", {}, { message: "attempt not found" })
+  const attemptId = request.attempt_id
+  const regradeId = request.regrade_id
+  // 再送の確認は AI を呼ぶ前に行う。鍵に採点の結果（source など）を入れると、AI を呼ぶまで再送か分からない。
+  const gradingKey = hashParts(["regrade", attemptId, regradeId])
+  const prior = await regradeReplay({ query }, gradingKey)
+  if (prior) return regradeReplayEnvelope(context, regradeId, attemptId, prior)
+
+  const decision = await decide(context, context.actual)
   const adopt = decision.success != null
   const result = await withTransaction(async (client) => {
     await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [attemptId])
+    const raced = await regradeReplay(client, gradingKey)
+    if (raced) return { raced }
     const gradingId = randomUUID()
     await client.query(
       `INSERT INTO skill_trainer.grading_observations
@@ -686,6 +694,7 @@ export async function regradeAttempt(request) {
     }
     return { gradingId, evidenceId }
   })
+  if (result.raced) return regradeReplayEnvelope(context, regradeId, attemptId, result.raced)
   if (adopt) await completePlanItem(context.plan_item_id)
   const learned = await estimateAndDiagnosis(context.target_skill_id, context.target_capability, context.policy_version, adopt)
   return envelope(true, "ok", {

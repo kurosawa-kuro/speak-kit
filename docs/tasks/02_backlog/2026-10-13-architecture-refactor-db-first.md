@@ -93,7 +93,7 @@ scripts/apply-local-schema.sh（speak_kit 固定）  scripts/reset-test-db.sh（
 
 | # | 場所 | 内容 |
 |---|---|---|
-| A1 | `app/screens/talk.js:39-45, 100` | 会話の「もう一度話す」（`handleRestart`）が `session_id` を作り直さない。同じ相手を選ぶと終了済みの会話が再生され、送信は `session_ended` で失敗する。別の相手を選ぶと `idempotency_conflict` になる |
+| A1 | **直した（第 1 段）** `app/screens/talk.js:39-45, 100` | 会話の「もう一度話す」（`handleRestart`）が `session_id` を作り直さない。同じ相手を選ぶと終了済みの会話が再生され、送信は `session_ended` で失敗する。別の相手を選ぶと `idempotency_conflict` になる |
 | A2 | ~~`app/screens/talk.js:200`~~ | **直した**（コミット `fbcc0ca`、`05_done/2026-10-13-talk-ime-enter.md`）。判定は `app/ui/keys.js` の `isSubmitEnter` / `isImeEnter` |
 | A3 | `lib/talk.mjs:122` | プロンプトは `existingCandidateId` を返させるのに、読む側は `existing_candidate_id` を見ている。「既存の候補と同じか」の判定が一度も効かない |
 | A4 | `lib/talk.mjs:315` | 会話での使用を判定する SQL の正規化が、`normalizeAnswer` と違う。短縮形やカンマのある例文が一致せず、会話での使用の記録が付かない |
@@ -551,3 +551,28 @@ migration の作り直し:
 - 第 2 段: 新旧の DB の教材の件数の突き合わせ、空の DB に手作業なしで乗ったログ、新しい baseline の `speak_kit_test` で `npm test` が通った出力
 - 第 3 段: AI を待つ間に DB のロックを持っていないこと（テストで AI の応答を遅らせ、別の操作が待たされないことを確かめる）
 - 第 4 段: リロード・戻る・リンクで同じ画面が開くこと
+
+## 実施記録
+
+### 第 1 段（2026-10-13 19 時台）
+
+直したもの:
+
+- A1・H1: 「シナリオを選び直す」で `session_id` を作り直す（`talk.js`）。画面で確かめた: 開始の失敗 → 選び直し → 同じ相手で、2 回の開始が別の `session_id` で送られた。
+- H2（つなぎ）: 会話の途中で画面を離れたら、サーバーで会話を終える（`talk.js` の後片付け）。
+- A3・H5: 候補の抽出で `existingCandidateId` を読む（`talk.mjs`）。
+- A4: 会話での使用の判定を、`normalizeAnswer` で例文と発話の両方を正規化して比べる（`talk.mjs`）。テスト: 「That is why I started learning English」が `CAUSE_THATS_WHY` に数えられる。
+- A5: 確認問題の応答の `submissionId` に、送られた値を返す（`confusion.mjs`）。
+- A6・H4: 再判定の再送の確認を AI の前に行い、ロックの中でもう一度確かめる。再送の鍵は `regrade` / 回答 / 再判定の ID だけにした（`attempt.mjs`）。テスト: 同じ再判定の再送で AI の呼び出し回数が増えない。
+- A7: 練習の取得の冪等キーに `skill_key` を入れ、再送では保存済みの問題を返す（`practice.mjs`）。テスト: 同じ ID・同じ表現は同じ問題、違う表現は別の問題。
+- A8: 答えた確認問題を覚えておき、古い計画データから同じ確認問題を出さない（`train.js`）。
+- A9: `useRpc` に `reset()` を足した。失敗したら先へ進まない（混同ペアの登録、再チェック）。再試行で前のエラーを消す（練習、クイズ）。混同ペアの登録の失敗を表示する。
+- A10: 候補の承認で、問題ごとの採点契約 `adaptive:<exercise_key>` を作って指す（`candidates.mjs`。第 3 段で作り方を 1 つにする）。
+- 準備: 本番ビルドの出力先を `NEXT_DIST_DIR` で分けられるようにした（`next.config.mjs`）。`NEXT_DIST_DIR=.next-build npx next build` なら、動いている開発サーバーを壊さない。
+
+確かめたこと:
+
+- `npm test`: 30 件中 30 件が通った（新しい `src/test/fixes.test.mjs` の 5 件を含む）。
+- `NEXT_DIST_DIR=.next-build npx next build`: 成功。開発サーバー（3000）は動いたまま 200 を返した。
+- 開発サーバーで `get_today_plan_v2`・`quiz_next_v1`・`get_progress_v2` が `ok`。
+

@@ -23,5 +23,9 @@ export function useRpc(name) {
     setState((current) => ({ ...current, loading: false, error: result.error?.message || result.code || "" }))
     return null
   }, [name])
-  return { ...state, trigger }
+  const reset = useCallback(() => {
+    latest.current += 1
+    setState({ data: null, loading: false, error: null })
+  }, [])
+  return { ...state, trigger, reset }
 }

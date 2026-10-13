@@ -1,7 +1,8 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useRpc } from "../ui/use-rpc"
+import { post } from "../ui/rpc"
 import { aiReasonLabel, uiErrorMessage } from "../ui/labels"
 import { isSubmitEnter } from "../ui/keys"
 
@@ -39,6 +40,16 @@ export function Talk() {
   const sessionIdRef = useRef("")
   if (sessionIdRef.current === "") sessionIdRef.current = uuid()
   const focusAtRef = useRef(null)
+  const openSessionRef = useRef(null)
+
+  useEffect(() => {
+    openSessionRef.current = conversationSessionId !== null && summary === null ? conversationSessionId : null
+  }, [conversationSessionId, summary])
+
+  useEffect(() => () => {
+    const open = openSessionRef.current
+    if (open) post("skill_trainer_end_talk_session_v2", { conversation_session_id: open }).catch(() => {})
+  }, [])
 
   const handleStart = useCallback((next) => {
     setScenario(next)
@@ -98,12 +109,14 @@ export function Talk() {
   }
 
   const handleRestart = useCallback(() => {
+    sessionIdRef.current = uuid()
     setScenario(null)
     setConversationSessionId(null)
     setMessages([])
     setInput("")
     setSummary(null)
     setAiAvailable(true)
+    setAiReason(null)
     setReviewed({})
   }, [])
 

@@ -93,6 +93,17 @@ export async function reviewCandidate(request) {
   }
   const exerciseKey = `CANDIDATE-${candidateId}-CR`
   await query(
+    `INSERT INTO skill_trainer.assessment_contracts
+       (contract_key, version, required_dimensions, response_modes, deterministic_policy,
+        ai_observation_schema, evidence_policy, domain_id)
+     VALUES ($1, 1, '["communication","semantic","intent","form","policy","target_skill_usage"]'::jsonb, '["free_text"]'::jsonb,
+             '{"kind":"normalized_exact_or_accepted_variant","expected_reference":true,"accepted_variants":true}'::jsonb,
+             '{"meaning_match":"boolean","speech_act_match":"boolean","comprehensibility":"enum","target_pattern_status":"enum","issues":"fact_array"}'::jsonb,
+             'versioned_reducer', (SELECT id FROM skill_trainer.domains WHERE code = 'english_conversation'))
+     ON CONFLICT DO NOTHING`,
+    [`adaptive:${exerciseKey}`],
+  )
+  await query(
     `INSERT INTO skill_trainer.exercise_definitions
        (exercise_key, version, training_mode, target_skill_id, target_capability,
         prompt_spec, reference_examples, accepted_variants, rubric, difficulty,
@@ -100,9 +111,9 @@ export async function reviewCandidate(request) {
      VALUES ($1, 1, 'controlled_recall', $2, 'CONTROLLED_RECALL',
              jsonb_build_object('prompt', $3::text), jsonb_build_array($4::text), '[]'::jsonb,
              '{"rubric_version":"controlled-recall-v2","required_dimensions":["communication","semantic","intent","form","policy","target_skill_usage"]}'::jsonb,
-             2, 'text', 'active', $5, 'adaptive:REQ-001', 1)
+             2, 'text', 'active', $5, $6, 1)
      ON CONFLICT (exercise_key, version) DO NOTHING`,
-    [exerciseKey, skillId, exercisePrompt, expectedReference, hashParts([exerciseKey, exercisePrompt, expectedReference, "controlled-recall-v2"])],
+    [exerciseKey, skillId, exercisePrompt, expectedReference, hashParts([exerciseKey, exercisePrompt, expectedReference, "controlled-recall-v2"]), `adaptive:${exerciseKey}`],
   )
   await query(
     `UPDATE skill_trainer.candidate_skills
