@@ -63,3 +63,15 @@
 
 - `git status -sb` と `git log --oneline -5` の出力（push 後）
 - secret の確認に使ったコマンドと、その結果（0 件）
+
+## Result（2026-10-13）
+
+- owner の判断を待たずに進めた点: push 前の `wip` コミットは書き直さず、そのまま送った（`git push --force` を避けるため。履歴は残る）。
+- R6・R2 の変更を、何をしたかが分かる日本語 1 行のメッセージで、別々のコミットにした。
+- 残りの文書（`AGENTS.md`、`CLAUDE.md`、タスク台帳、レビュー依頼、`docs/tasks/01_idea/`）を 1 コミットにした。
+- コミットメッセージの決まりを `AGENTS.md`（コーディング規約）と `CLAUDE.md`（作業ルール）に 1 行ずつ足した。「何をしたかを日本語 1 行で書く。`wip` だけのメッセージにしない」。
+- secret の確認: コミットごとに `git diff --cached --name-only` に `secret.yaml` と `.env` が無いこと、`git diff --cached` に `sk-ant-`、`supabaseDbPassword`、`AI_ANTHROPIC_API_KEY=`、`PGPASSWORD=` が 0 件であることを確かめた。
+
+## Evidence
+
+push 後の `git status -sb` と `git log --oneline -5` は、この節の下に追記する。

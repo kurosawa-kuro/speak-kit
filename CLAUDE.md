@@ -61,6 +61,8 @@ make lint     # 静的解析
 - task note を仕様の正本にしない。確定内容は `docs/specs/`、`docs/adr/`、`docs/runbooks/` に昇格する。アイディアノートを実装指示にしない。
 - コア機能を先に通す。`ANTHROPIC_API_KEY` を unset にした状態で、テキストのフレーズ練習と学習記録が完了することを確認してから AI 機能を足す。
 - AI 無効時の UI は disabled と案内文にする。AI セクションは Error Boundary で囲む。
+- コミットメッセージは、何をしたかを日本語 1 行で書く。`wip` だけのメッセージにしない。
+- `npm test` は `speak_kit_test` を作り直して流す。本物の `speak_kit` に向けてテストを流さない。
 - **Scope invariant（常時）**: 作業中に Goal/Scope 外の変更・前提崩れ・追加副作用・docs と実装の矛盾を見つけたら即実装しない。`control-change` で分類するか follow-up task に残す。「ついで修正/共通化/改名」は scope creep。
 
 ## AI Runtime Protocol（薄い・常時）

@@ -35,6 +35,8 @@ make fmt      # フォーマット
 - 非機密の設定値は `env/config.yaml`、ローカル秘密情報は `env/secret.yaml`、チーム共有は Doppler (`doppler.yaml`)。秘密情報をコミットしない。配布先の Supabase と任意の Anthropic キーは、各自の Vercel / Supabase に置く。クライアントに API キーを渡さない。
 - コアの API route は AI クライアントを import しない。AI を使えるかは設定とキー有無から 1 箇所で算出し、クライアントへキーの値は返さない。設定がオフなら Anthropic へ接続しない。401 / 429 / 5xx / timeout でコア機能を落とさない。
 - アイディアノートを実装指示にしない。正本へ昇格するときは、変更案と実行 task に分ける。
+- コミットメッセージは、何をしたかを日本語 1 行で書く。`wip` だけのメッセージにしない。
+- `npm test` は `speak_kit_test` を作り直して流す。本物の `speak_kit` に向けてテストを流さない。
 
 ## ドキュメント
 

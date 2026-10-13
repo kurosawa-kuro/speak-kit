@@ -70,10 +70,10 @@
 | [05_done/2026-10-13-move-code-under-src.md](05_done/2026-10-13-move-code-under-src.md) | プログラムコードを `src/app/`、`src/lib/`、`src/test/` へ移した。Rust は置かない。テスト 8 件とビルドのルートは移動前と同じ |
 | [05_done/2026-10-13-settings-screen.md](05_done/2026-10-13-settings-screen.md) | 設定画面の第一弾。「AI を使う／使わない」を `learner_settings` に保存し、オフならキーがあっても Anthropic へ接続しない。各画面の表示を「設定でオフ」「キー未設定」に分けた。ほかの設定項目の候補 3〜28 は owner の選択待ち |
 | [05_done/2026-10-13-content-yaml-in-data.md](05_done/2026-10-13-content-yaml-in-data.md) | 教材（表現 51・混同ペア 34）を `data/` の YAML に移した。`npm run data:check` / `data:sync` / `data:sync -- --apply` / `data:export` で検査・差分・反映・書き出しができる。追加・変更・停止を練習用 DB で観測した |
-| [02_backlog/2026-10-13-isolate-test-database.md](02_backlog/2026-10-13-isolate-test-database.md) | `npm test` を使い捨ての DB `speak_kit_test` に向け、本物の学習記録を汚さないようにする。既に入った偽の回答の片付けを含む。owner の着手指示待ち |
-| [02_backlog/2026-10-13-commit-and-push.md](02_backlog/2026-10-13-commit-and-push.md) | 未コミットの文書をコミットし、未 push の 5 コミットを GitHub に送る。`wip` だけのコミットメッセージをやめる。owner の着手指示待ち |
-| [02_backlog/2026-10-13-talk-ime-enter.md](02_backlog/2026-10-13-talk-ime-enter.md) | 会話画面で、日本語入力の変換を確定する Enter で送信しないようにする。owner の着手指示待ち |
-| [02_backlog/実運用可能な状況かをレビュー依頼.md](02_backlog/実運用可能な状況かをレビュー依頼.md) | ローカルで一人が毎日使えるかのレビュー。まだ不可。バックアップ無し、テストが本物の記録を汚す、LAN に開いている、再起動で動かない、未コミット、日本語入力の Enter で送信、の 6 つを先に直す |
+| [05_done/2026-10-13-isolate-test-database.md](05_done/2026-10-13-isolate-test-database.md) | `npm test` を毎回作り直すテスト用 DB `speak_kit_test` に向けた。2 回流して本物の `speak_kit` の全 30 表の件数と設定は変わらなかった。既に入った偽の行は DB の作り直しで捨てる |
+| [05_done/2026-10-13-commit-and-push.md](05_done/2026-10-13-commit-and-push.md) | 変更を意味のあるメッセージでコミットし、GitHub に送った。`wip` のコミットは書き直さずに送った。コミットメッセージの決まりを `AGENTS.md` と `CLAUDE.md` に足した |
+| [05_done/2026-10-13-talk-ime-enter.md](05_done/2026-10-13-talk-ime-enter.md) | 会話画面と混同ペアの登録欄で、日本語入力の変換を確定する Enter では送信しないようにした。Safari の実機確認は owner に残る |
+| [02_backlog/実運用可能な状況かをレビュー依頼.md](02_backlog/実運用可能な状況かをレビュー依頼.md) | ローカルで一人が毎日使えるかのレビュー。まだ不可。バックアップ無し、テストが本物の記録を汚す、LAN に開いている、再起動で動かない、未コミット、日本語入力の Enter で送信、の 6 つ。R2・R5・R6 は直した。R1・R3・R4 は owner 判断で見送り |
 | [02_backlog/2026-10-13-architecture-refactor-db-first.md](02_backlog/2026-10-13-architecture-refactor-db-first.md) | 設計レベルのリファクタリング案。DB の作り直しを先に行い、次にサーバーの層の分離、画面の実ルート化。すぐ直すべきバグ 10 件を含む。owner の段ごとの着手指示待ち |
 | [05_done/2026-10-13-local-text-golden-path.md](05_done/2026-10-13-local-text-golden-path.md) | 参照元の SQL 28 本と dispatch 16 名をローカル Postgres `speak_kit` へ写し、キー無しの choice 経路を通した |
 | [03_active/refactoring-candidates.md](03_active/refactoring-candidates.md) | 残りのクリーンアップ候補 |
