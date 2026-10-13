@@ -39,13 +39,13 @@ test("choice golden path does not require an AI key", async () => {
     answer_text: "hello",
   })
   assert.equal(freeText.ok, false)
-  assert.equal(freeText.code, "ai_unavailable")
+  assert.equal(freeText.code, "not_found")
   const talk = await dispatch("skill_trainer_start_talk_session_v2", {
     scenario: "teacher",
     session_id: crypto.randomUUID(),
   })
-  assert.equal(talk.ok, false)
-  assert.equal(talk.code, "ai_unavailable")
+  assert.equal(talk.ok, true, JSON.stringify(talk))
+  assert.equal(typeof talk.data.assistantMessage, "string")
 })
 
 test("unknown rpc is absent", async () => {

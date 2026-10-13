@@ -28,7 +28,7 @@
 | Next.js API Routes（AI） | 自由対話、文法／自然さフィードバック、シナリオ生成 | 任意。コアのあと |
 | `lib/ai/isEnabled.ts`（例） | `hasAnthropicKey` の単一算出点。サーバーは `aiEnabled: boolean` だけを返す | パスは着手時。算出点は 1 箇所 |
 | `lib/ai/client.ts`（例） | キーが無いときは `null` | 同上 |
-| Supabase（Auth + Postgres） | 配布後の認証と学習記録 | 製品の保存先。①用 project は未所持。クラウド手順 |
+| Supabase（Auth + Postgres） | 配布後の認証と学習記録。ログイン機能は後回し | 製品の保存先。①用 project は作成済み。今のローカルアプリにはログイン画面もセッションも置かない |
 | Vercel | 配布先のデプロイ | 別ステップ |
 | Claude API | 任意の LLM。クライアントにキーを渡さない | 未設定が既定 |
 | エージェントガイド | Codex / 他エージェント向けの repo ガイド | `AGENTS.md` |

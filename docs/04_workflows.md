@@ -6,7 +6,7 @@
 
 1. ローカルで、AI キー無しの Golden Path（テキストのフレーズ練習、学習記録）を最後まで通す。音声は作らない。インスタンスの利用者は一人である。
 2. そのあと、任意の Claude を足す。キーを外してもコアが壊れていないことを確認する。
-3. デプロイと SQL の Supabase 適用は、ローカルの Golden Path のあとである。準備として今終わらせるのは、既存の GitHub `kurosawa-kuro/speak-kit` を、黒澤本人の Vercel Hobby へ接続することである。既存プロジェクト `vercel-nextjs-starter` には載せない。CLI は `kurosawa8122-9989` でログイン済み。Vercel トークンは Doppler に無く、ダッシュボード連携では不要である。
+3. デプロイ、SQL の Supabase 適用、Supabase のログイン機能は、ローカルの Golden Path のあとである。ログイン画面とセッションは今置かない。準備として今終わらせるのは、既存の GitHub `kurosawa-kuro/speak-kit` を、黒澤本人の Vercel Hobby へ接続することである。既存プロジェクト `vercel-nextjs-starter` には載せない。CLI は `kurosawa8122-9989` でログイン済み。Vercel トークンは Doppler に無く、ダッシュボード連携では不要である。
 
 動画の最初のステップも「まず AI 無しで動かす」で完結させる。Anthropic キーの設定は後続である。
 

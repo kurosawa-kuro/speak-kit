@@ -16,7 +16,7 @@
 
 ## 永続化
 
-製品の認証と学習記録の保存先は、Supabase（Auth + Postgres、無料枠）である。①用 project `speak-kit`（South Asia / Mumbai、黒澤本人の一人用）は作成済みである。リージョンは Mumbai のままにする。この project は毎日の学習運用アプリではなく、live の `skill-trainer` とは別である。SQL の適用とクラウド手順は、ローカル Postgres で Golden Path が通ったあとである。
+製品の認証と学習記録の保存先は、Supabase（Auth + Postgres、無料枠）である。①用 project `speak-kit`（South Asia / Mumbai、黒澤本人の一人用）は作成済みである。リージョンは Mumbai のままにする。この project は毎日の学習運用アプリではなく、live の `skill-trainer` とは別である。SQL の適用とクラウド手順は、ローカル Postgres で Golden Path が通ったあとである。Supabase のログイン機能も同じく後回しである。今のローカルアプリにはログイン画面もセッションも置かない。
 
 ローカル先行の保存先は、speak-kit 専用のローカル Postgres である。schema は参照元 `sql/postgres/` の 28 ファイルをファイル名順に写し、そのローカル DB にだけ適用する。接続文字列は `DB_FLOW_URL` ではない。live の学習者データベース、Job Control の Supabase、private-ops のローカル Postgres 正本には書かない。Supabase への載せ替えはクラウド手順である。
 

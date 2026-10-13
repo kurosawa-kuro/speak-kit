@@ -65,6 +65,7 @@
 
 | ファイル | 用途 |
 |---|---|
+| [03_active/2026-10-13-match-original-training-loop.md](03_active/2026-10-13-match-original-training-loop.md) | 元の英会話学習から外れている計画・記録・会話の 26 箇所。owner が修正作業を指示したので進行中 |
 | [05_done/2026-10-13-local-text-golden-path.md](05_done/2026-10-13-local-text-golden-path.md) | 参照元の SQL 28 本と dispatch 16 名をローカル Postgres `speak_kit` へ写し、キー無しの choice 経路を通した |
 | [03_active/refactoring-candidates.md](03_active/refactoring-candidates.md) | 残りのクリーンアップ候補 |
 
@@ -92,5 +93,7 @@
 ## Notes
 ```
 
-次に着手できる作業は
+進行中の本作業は
+[03_active/2026-10-13-match-original-training-loop.md](03_active/2026-10-13-match-original-training-loop.md)
+である。クリーンアップ候補は
 [03_active/refactoring-candidates.md](03_active/refactoring-candidates.md) で管理する。
