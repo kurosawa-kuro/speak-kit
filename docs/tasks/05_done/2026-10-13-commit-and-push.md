@@ -70,7 +70,7 @@
 - R6・R2 の変更を、何をしたかが分かる日本語 1 行のメッセージで、別々のコミットにした。
 - 残りの文書（`AGENTS.md`、`CLAUDE.md`、タスク台帳、レビュー依頼、`docs/tasks/01_idea/`）を 1 コミットにした。
 - コミットメッセージの決まりを `AGENTS.md`（コーディング規約）と `CLAUDE.md`（作業ルール）に 1 行ずつ足した。「何をしたかを日本語 1 行で書く。`wip` だけのメッセージにしない」。
-- secret の確認: コミットごとに `git diff --cached --name-only` に `secret.yaml` と `.env` が無いこと、`git diff --cached` に `sk-ant-`、`supabaseDbPassword`、`AI_ANTHROPIC_API_KEY=`、`PGPASSWORD=` が 0 件であることを確かめた。
+- secret の確認: コミットごとに `git diff --cached --name-only` に `secret.yaml` と `.env` が無いこと、`git diff --cached` に `sk-ant-`、`supabaseDbPassword`、`AI_ANTHROPIC_API_KEY=`、`PGPASSWORD=` の値が無いことを確かめた。3 つ目のコミットでは 2 件当たったが、どちらも名前だけで値は無い（`docs/tasks/01_idea/` の「パスワードは `env/secret.yaml` の `supabaseDbPassword` にある」という記述と、この節の文）。
 
 ## Evidence
 
