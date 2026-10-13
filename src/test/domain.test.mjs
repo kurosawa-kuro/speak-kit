@@ -5,6 +5,7 @@ import { learnerPhrase, normalizeAnswer } from "../server/domain/normalize.mjs"
 import { recognizedNotRecalled, verdict, verdictFields } from "../server/domain/verdict.mjs"
 import { costUsd, overLimit } from "../server/ai/usage.mjs"
 import { keyFromPattern } from "../server/services/candidates.mjs"
+import { yen } from "../app/_lib/format.js"
 
 test("normalizeAnswer folds case, punctuation and contractions", () => {
   assert.equal(normalizeAnswer("I'm tired."), "i am tired")
@@ -56,4 +57,11 @@ test("keyFromPattern makes a YAML-valid key", () => {
   assert.equal(keyFromPattern("24/7 support"), "X_24_7_SUPPORT")
   assert.equal(keyFromPattern("…"), "CANDIDATE")
   assert.ok(keyFromPattern("one two three four five six seven eight nine ten eleven").length <= 40)
+})
+
+test("yen shows small amounts to one decimal and larger ones as whole yen", () => {
+  assert.equal(yen(0.00407, 150), "¥0.6")
+  assert.equal(yen(0, 150), "¥0.0")
+  assert.equal(yen(2, 150), "¥300")
+  assert.equal(yen(20, 150), "¥3,000")
 })

@@ -21,3 +21,9 @@ export function date(value) {
 export function usd(value) {
   return `$${Number(value).toFixed(2)}`
 }
+
+/** ドルを目安のレートで円にする。10 円未満は小数 1 桁まで出す。 */
+export function yen(usdValue, usdJpy) {
+  const value = Number(usdValue) * Number(usdJpy)
+  return value < 10 ? `¥${value.toFixed(1)}` : `¥${Math.round(value).toLocaleString("ja-JP")}`
+}

@@ -58,6 +58,8 @@ export const config = Object.freeze({
     }),
     fallbackPricePerMTok: { input: 15, output: 75 },
     dailyLimitUsd: 2,
+    // 画面に円で出すときの目安のレート（1 ドルあたりの円）。
+    usdJpy: Number(process.env.SPEAK_KIT_USD_JPY || 150),
     monthlyLimitUsd: 20,
   }),
 })

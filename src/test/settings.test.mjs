@@ -120,6 +120,8 @@ test("usage over the daily limit stops AI before any request", async () => {
     const view = await dispatch("skill_trainer_get_settings_v1", {})
     assert.equal(view.data.ai.aiReason, "limit_reached")
     assert.equal(view.data.startup.ai.dailyLimitUsd, 2)
+    assert.ok(view.data.ai.usage.dayUsd >= 2)
+    assert.equal(view.data.ai.usage.usdJpy, 150)
   } finally {
     await pool.query("DELETE FROM skill_trainer.ai_usage WHERE feature = 'test'")
   }

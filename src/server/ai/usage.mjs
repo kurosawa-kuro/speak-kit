@@ -25,6 +25,7 @@ export async function usageTotals(db = { query }) {
     monthUsd: Number(row.month),
     dailyLimitUsd: config.ai.dailyLimitUsd,
     monthlyLimitUsd: config.ai.monthlyLimitUsd,
+    usdJpy: config.ai.usdJpy,
   }
 }
 

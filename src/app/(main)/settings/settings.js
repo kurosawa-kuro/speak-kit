@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { useRpc } from "../../_hooks/use-rpc"
-import { usd } from "../../_lib/format"
+import { usd, yen } from "../../_lib/format"
 import { aiReasonLabel } from "../../_lib/labels"
 
 const AI_FEATURES = ["文字回答の AI 採点", "会話相手の返答", "言えなかった表現の候補の抽出", "混同ペアの違いの下書き"]
@@ -59,8 +59,9 @@ export function Settings() {
         </Row>
         <Row label="API キー">{ai.keyConfigured ? "設定済み" : "未設定"}</Row>
         <Row label="いまの状態">{ai.aiAvailable ? "AI を使っています" : aiReasonLabel(ai.aiReason)}</Row>
-        <Row label="今日の利用額">{usd(ai.usage.dayUsd)} / {usd(ai.usage.dailyLimitUsd)}</Row>
-        <Row label="今月の利用額">{usd(ai.usage.monthUsd)} / {usd(ai.usage.monthlyLimitUsd)}</Row>
+        <Row label="今日の利用額">{yen(ai.usage.dayUsd, ai.usage.usdJpy)} / {yen(ai.usage.dailyLimitUsd, ai.usage.usdJpy)}（{usd(ai.usage.dayUsd)} / {usd(ai.usage.dailyLimitUsd)}）</Row>
+        <Row label="今月の利用額">{yen(ai.usage.monthUsd, ai.usage.usdJpy)} / {yen(ai.usage.monthlyLimitUsd, ai.usage.usdJpy)}（{usd(ai.usage.monthUsd)} / {usd(ai.usage.monthlyLimitUsd)}）</Row>
+        <Row label="円の目安">1 ドル = {ai.usage.usdJpy} 円で計算</Row>
         {settings.aiEnabled && !ai.keyConfigured && (
           <p className="pb-3 text-sm text-amber-200">オンにしても、API キーが設定されるまで AI は使えません。キーはサーバーの環境変数 ANTHROPIC_API_KEY に置きます。</p>
         )}
@@ -81,7 +82,7 @@ export function Settings() {
           {startup.database.kind === "local" ? `ローカル DB（${startup.database.name}）` : startup.database.name}
         </Row>
         <Row label="AI のモデル">{startup.ai.model}</Row>
-        <Row label="AI の利用上限">1 日 {usd(startup.ai.dailyLimitUsd)}・1 か月 {usd(startup.ai.monthlyLimitUsd)}</Row>
+        <Row label="AI の利用上限">1 日 {yen(startup.ai.dailyLimitUsd, ai.usage.usdJpy)}・1 か月 {yen(startup.ai.monthlyLimitUsd, ai.usage.usdJpy)}（{usd(startup.ai.dailyLimitUsd)}・{usd(startup.ai.monthlyLimitUsd)}）</Row>
       </section>
 
       {error && <p className="text-sm text-red-300">{error}</p>}
