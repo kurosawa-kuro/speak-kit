@@ -1,6 +1,6 @@
 # 08 リリース Runbook
 
-クラウドへの配布は、ローカルで Golden Path が通ったあとの別ステップである。Vercel のトークン、①用の Supabase project、配布用の GitHub トークンは Doppler `apps/dev` に無い。この Runbook は、その手順を今は実行しない。
+クラウドへの配布は、ローカルで Golden Path が通ったあとの別ステップである。①用の Supabase project `speak-kit` は作成済みで、データベースパスワードは `env/secret.yaml` の `supabaseDbPassword` にある。Vercel のトークンと配布用の GitHub トークンは Doppler `apps/dev` に無い。この Runbook は、その手順を今は実行しない。
 
 ## リリース前
 

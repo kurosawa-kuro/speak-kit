@@ -12,13 +12,13 @@
 | 配布先の実行時秘密 | 各自の Vercel と Supabase。黒澤の Doppler に相手の利用量を載せない |
 | アプリの Claude キー名 | `ANTHROPIC_API_KEY`。未設定が既定。Doppler 名 `AI_ANTHROPIC_API_KEY` とは別名 |
 
-使わない鍵、まだ無い鍵は [04_workflows.md](./04_workflows.md) の表のとおり。`CLOUDFLARE_*` はこのアプリのデプロイに使わない。`INFRA_GITHUB_MEMO_REMOTE_PAT` でリポジトリを作らない。Vercel トークン、①用 Supabase、配布用 GitHub トークンは、この Doppler に無い。
+使わない鍵、まだ無い鍵は [04_workflows.md](./04_workflows.md) の表のとおり。`CLOUDFLARE_*` はこのアプリのデプロイに使わない。`INFRA_GITHUB_MEMO_REMOTE_PAT` でリポジトリを作らない。Vercel トークンと配布用 GitHub トークンは、この Doppler に無い。①用 project `speak-kit` のデータベースパスワードは `env/secret.yaml` の `supabaseDbPassword` である。
 
 ## 永続化
 
-製品の認証と学習記録の保存先は、Supabase（Auth + Postgres、無料枠）である。①用の Supabase project は未所持で、クラウド手順は別ステップである。
+製品の認証と学習記録の保存先は、Supabase（Auth + Postgres、無料枠）である。①用 project `speak-kit`（South Asia / Mumbai、黒澤本人の一人用）は作成済みである。リージョンは Mumbai のままにする。この project は毎日の学習運用アプリではなく、live の `skill-trainer` とは別である。SQL の適用とクラウド手順は、ローカル Postgres で Golden Path が通ったあとである。
 
-ローカル先行のあいだ、学習記録をどのファイルまたはどのローカル DB に置くかは未決である。live の学習者データベース、Job Control の Supabase、private-ops のローカル Postgres 正本には書かない。
+ローカル先行の保存先は、speak-kit 専用のローカル Postgres である。schema は参照元 `sql/postgres/` の 28 ファイルをファイル名順に写し、そのローカル DB にだけ適用する。接続文字列は `DB_FLOW_URL` ではない。live の学習者データベース、Job Control の Supabase、private-ops のローカル Postgres 正本には書かない。Supabase への載せ替えはクラウド手順である。
 
 コアが保存するのは、学習記録とお気に入りである。会話ログを保存するか、プライバシー方針をどうするかは未決である。未決のままカラムやテーブルを足さない。
 

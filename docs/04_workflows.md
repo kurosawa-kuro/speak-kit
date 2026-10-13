@@ -6,7 +6,7 @@
 
 1. ローカルで、AI キー無しの Golden Path（テキストのフレーズ練習、学習記録）を最後まで通す。音声は作らない。インスタンスの利用者は一人である。
 2. そのあと、任意の Claude を足す。キーを外してもコアが壊れていないことを確認する。
-3. クラウド（Vercel、①用 Supabase、配布用 GitHub、YouTube の手順）は別ステップである。必要なトークンは Doppler `apps/dev` に無い。
+3. デプロイと SQL の Supabase 適用は、ローカルの Golden Path のあとである。準備として今終わらせるのは、既存の GitHub `kurosawa-kuro/speak-kit` を、黒澤本人の Vercel Hobby へ接続することである。既存プロジェクト `vercel-nextjs-starter` には載せない。CLI は `kurosawa8122-9989` でログイン済み。Vercel トークンは Doppler に無く、ダッシュボード連携では不要である。
 
 動画の最初のステップも「まず AI 無しで動かす」で完結させる。Anthropic キーの設定は後続である。
 
@@ -20,7 +20,7 @@
 | `CLOUDFLARE_ACCOUNT_ID` `CLOUDFLARE_API_TOKEN` | このアプリでは使わない。配布先は Vercel である |
 | `INFRA_GITHUB_MEMO_REMOTE_PAT` | メモ帳の読み取り用。新規リポジトリの作成には使わない |
 
-この Doppler に無いもの: Vercel のトークン、①用の Supabase project、配布用の GitHub トークン。Job Control 用の Supabase（`JOB_CONTROL_SUPABASE_*`）と `INFRA_SUPABASE_PAT` は、①用の project ではない。`speak-kit` の認証・DB に流用しない。
+この Doppler に無いもの: Vercel のトークン、配布用の GitHub トークン。①用の Supabase project `speak-kit` は作成済みで、データベースパスワードは `env/secret.yaml` の `supabaseDbPassword` だけに置く。Job Control 用の Supabase（`JOB_CONTROL_SUPABASE_*`）と `INFRA_SUPABASE_PAT` は、この project ではない。`speak-kit` の認証・DB に流用しない。
 
 ## セットアップ
 

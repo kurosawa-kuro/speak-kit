@@ -59,7 +59,7 @@ Rust API を crate 依存、`local-api-host` 経由、sqlx のままでは載せ
 |---|---|---|---|
 | 1. AI キー無しで開く | Next.js UI、`aiEnabled` の算出 | キーはサーバー側だけ。クライアントへは boolean | キー未設定を例外として落とすこと |
 | 2. テキストでフレーズを練習する | UI とコア API | コア経路。マイク、再生、録音、AI route を呼ばない | 音声機能や AI 呼び出しをこの応答に直列で置くこと |
-| 3. 学習記録を残す | コア API と保存先 | 製品の保存先は Supabase。ローカル先行の保存先は未決。記録の持ち主は利用者一人 | live の学習者データベース。①用 Supabase は未所持 |
+| 3. 学習記録を残す | コア API とローカル Postgres | schema は参照元 SQL の 28 ファイル。適用先は speak-kit 専用のローカル DB。記録の持ち主は利用者一人 | live の `DB_FLOW_URL`。①用 Supabase は未所持 |
 
 - 新しい依存を足すときは、この表の Golden Path 上に AI・Vercel・Cloudflare を単一障害点として置かない。
 - Golden Path 上の構成要素の変更は、[08_release_runbook.md](./08_release_runbook.md) の smoke と整合させる。
