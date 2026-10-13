@@ -23,6 +23,24 @@ async function nextCode(client) {
   return `P1-${String(found.rows[0].n + 1).padStart(3, "0")}`
 }
 
+/** 候補の文から表現の key を作る（例: "I was about to say that." → I_WAS_ABOUT_TO_SAY_THAT）。 */
+export function keyFromPattern(pattern) {
+  const words = String(pattern || "").toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim().split(" ").filter(Boolean)
+  let key = ""
+  for (const word of words) {
+    if (key && `${key}_${word}`.length > 40) break
+    key = key ? `${key}_${word}` : word
+  }
+  if (!key) return "CANDIDATE"
+  return /^[A-Z]/.test(key) ? key : `X_${key}`
+}
+
+/** 画面が key を指定しなかったときは、使われていない key にする。 */
+async function freeKey(base, candidateId) {
+  const used = await query("SELECT 1 FROM skill_trainer.skill_concepts WHERE stable_key = $1", [base])
+  return used.rowCount ? `${base}_C${candidateId}` : base
+}
+
 function finalized(candidateId, candidate, decision) {
   if (candidate.review_state !== decision) {
     return envelope(false, "idempotency_conflict", {}, { message: "candidate was already finalized with a different decision" })
@@ -57,10 +75,10 @@ export async function reviewCandidate(operation, request) {
     )
     return envelope(true, "ok", { candidateId, reviewState: "rejected", promoted: false }, null)
   }
-  const stableKey = text(request, "stable_key")
-  if (!stableKey) return validationError("stable_key is required for approval")
-  const exercisePrompt = text(request, "exercise_prompt")
-  const expectedReference = text(request, "expected_reference")
+  const explicitKey = text(request, "stable_key")
+  const stableKey = explicitKey ?? await freeKey(keyFromPattern(candidate.pattern), candidateId)
+  const exercisePrompt = text(request, "exercise_prompt") || candidate.meaning?.trim() || null
+  const expectedReference = text(request, "expected_reference") || candidate.pattern?.trim() || null
   if (!exercisePrompt) return validationError("exercise_prompt is required for approval")
   if (!expectedReference) return validationError("expected_reference is required for approval")
   const category = text(request, "category") || "OUTPUT"

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto"
+import { verdictFields } from "../domain/verdict.mjs"
 import { askClaude } from "../ai/client.mjs"
 import { CONFUSION_DRAFT_SYSTEM, confusionDraftUser } from "../ai/prompts.mjs"
 import { derivePair } from "../content/derive.mjs"
@@ -132,6 +133,7 @@ function probeEnvelope(submissionId, probe, actual, success, notice) {
     expectedReference: probe.expected_text,
     outcome: success ? "success" : "failure",
     gradingStatus: "graded",
+    ...verdictFields("graded", success ? "success" : "failure"),
     confusion: notice,
   }, null)
 }

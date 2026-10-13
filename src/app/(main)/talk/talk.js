@@ -1,26 +1,12 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { useRpc } from "../ui/use-rpc"
-import { post } from "../ui/rpc"
-import { aiReasonLabel, uiErrorMessage } from "../ui/labels"
-import { isSubmitEnter } from "../ui/keys"
-
-const SCENARIOS = [
-  { value: "teacher", label: "講師と話す", description: "英語教師が簡単な英語で助けながら会話を進める" },
-  { value: "learner", label: "学習者同士で話す", description: "同じレベルの学習者としてカジュアルに雑談する" },
-  { value: "free_talk", label: "自由に話す", description: "自然な会話パートナーと自由に話す" },
-]
-
-function uuid() {
-  return typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`
-}
-
-function Spinner({ size = "h-5 w-5" }) {
-  return <span className={`${size} animate-spin rounded-full border-2 border-current border-t-transparent`} />
-}
+import { AiUnavailableBanner, ErrorCard, Metric, Spinner } from "../../_components/ui"
+import { useRpc } from "../../_hooks/use-rpc"
+import { isSubmitEnter } from "../../_lib/keys"
+import { TALK_SCENARIOS, uiErrorMessage } from "../../_lib/labels"
+import { post } from "../../_lib/rpc"
+import { uuid } from "../../_lib/uuid"
 
 export function Talk() {
   const startSession = useRpc("skill_trainer_start_talk_session_v2")
@@ -98,11 +84,6 @@ export function Talk() {
       candidate_id: candidate.candidateId,
       decision,
       reviewed_by: "owner",
-      stable_key: `FREEZE_${candidate.candidateId}`,
-      canonical_form: candidate.pattern,
-      exercise_prompt: candidate.meaning ?? "",
-      expected_reference: candidate.pattern,
-      category: "OUTPUT",
     }).then((res) => {
       if (res) setReviewed((current) => ({ ...current, [candidate.candidateId]: res.reviewState }))
     })
@@ -127,7 +108,7 @@ export function Talk() {
           <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 sm:col-span-3">
             シナリオを選択
           </p>
-          {SCENARIOS.map((s) => (
+          {TALK_SCENARIOS.map((s) => (
             <button
               key={s.value}
               type="button"
@@ -153,29 +134,13 @@ export function Talk() {
       )}
 
       {scenario !== null && conversationSessionId === null && startSession.error !== null && (
-        <div className="rounded-xl border border-neutral-800 bg-neutral-900 px-5 py-4">
-          <div className="flex items-start gap-3">
-            <span className="text-amber-400">⚠</span>
-            <p className="text-sm text-neutral-300">
-              {uiErrorMessage(startSession.error, "会話を開始できませんでした。もう一度お試しください。")}
-            </p>
-          </div>
-          <button type="button" onClick={handleRestart} className="mt-4 flex h-11 w-full items-center justify-center rounded-md bg-neutral-800 text-sm font-semibold">
-            シナリオを選び直す
-          </button>
-        </div>
+        <ErrorCard message={startSession.error} fallback="会話を開始できませんでした。もう一度お試しください。" onRetry={handleRestart} retryLabel="シナリオを選び直す" />
       )}
 
       {conversationSessionId !== null && summary === null && (
         <div className="flex flex-col gap-3">
           {!aiAvailable && (
-            <div className="flex items-start gap-3 rounded-xl border border-amber-800/60 bg-amber-950/30 px-4 py-3">
-              <span className="text-amber-400">⚠</span>
-              <p className="text-sm text-amber-200">
-                {aiReasonLabel(aiReason)}会話は続けられますが、固定の返答になり、発話内容への
-                フィードバックは行われません。
-              </p>
-            </div>
+            <AiUnavailableBanner reason={aiReason}>会話は続けられますが、固定の返答になり、発話内容へのフィードバックは行われません。</AiUnavailableBanner>
           )}
           <div className="flex min-h-80 flex-col gap-3 rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-4 lg:min-h-[32rem] lg:px-6">
             {messages.map((m, i) => (
@@ -254,33 +219,13 @@ export function Talk() {
             <p className="mt-2 text-2xl font-bold text-neutral-100">
               {summary.turnCount}ターン・{Math.round(summary.durationSeconds / 60)}分
             </p>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm md:grid-cols-3">
-              <div className="rounded-lg bg-neutral-800 px-3 py-2">
-                <p className="text-xs text-neutral-500">自発質問</p>
-                <p className="text-lg font-bold text-neutral-100">{summary.selfQuestionCount}</p>
-              </div>
-              <div className="rounded-lg bg-neutral-800 px-3 py-2">
-                <p className="text-xs text-neutral-500">フォローアップ</p>
-                <p className="text-lg font-bold text-neutral-100">{summary.followUpCount}</p>
-              </div>
-              <div className="rounded-lg bg-neutral-800 px-3 py-2">
-                <p className="text-xs text-neutral-500">聞き返し・言い直し</p>
-                <p className="text-lg font-bold text-neutral-100">{summary.errorHandlingCount}</p>
-              </div>
-              <div className="rounded-lg bg-neutral-800 px-3 py-2">
-                <p className="text-xs text-neutral-500">完全停止</p>
-                <p className="text-lg font-bold text-neutral-100">{summary.freezeCount}</p>
-              </div>
-              <div className="rounded-lg bg-neutral-800 px-3 py-2">
-                <p className="text-xs text-neutral-500">日本語に切り替えた回数</p>
-                <p className="text-lg font-bold text-neutral-100">{summary.japaneseFallbackCount}</p>
-              </div>
-              <div className="rounded-lg bg-neutral-800 px-3 py-2">
-                <p className="text-xs text-neutral-500">平均応答時間</p>
-                <p className="text-lg font-bold text-neutral-100">
-                  {summary.avgLatencyMs !== null ? `${Math.round(summary.avgLatencyMs / 1000)}秒` : "—"}
-                </p>
-              </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
+              <Metric large label="自発質問" value={summary.selfQuestionCount} />
+              <Metric large label="フォローアップ" value={summary.followUpCount} />
+              <Metric large label="聞き返し・言い直し" value={summary.errorHandlingCount} />
+              <Metric large label="完全停止" value={summary.freezeCount} />
+              <Metric large label="日本語に切り替えた回数" value={summary.japaneseFallbackCount} />
+              <Metric large label="平均応答時間" value={summary.avgLatencyMs !== null ? `${Math.round(summary.avgLatencyMs / 1000)}秒` : "—"} />
             </div>
           </div>
 

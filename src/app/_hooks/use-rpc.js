@@ -1,9 +1,13 @@
 "use client"
 
 import { useCallback, useRef, useState } from "react"
-import { aiReasonLabel } from "./labels"
-import { post } from "./rpc"
+import { aiReasonLabel } from "../_lib/labels"
+import { post } from "../_lib/rpc"
 
+/**
+ * RPC を 1 つ呼ぶフック。trigger は成功なら data、失敗なら null を返す。
+ * error は画面に出す文字列（無ければ null）。clearError で消せる。
+ */
 export function useRpc(name) {
   const [state, setState] = useState({ data: null, loading: false, error: null })
   const latest = useRef(0)
@@ -31,5 +35,6 @@ export function useRpc(name) {
     latest.current += 1
     setState({ data: null, loading: false, error: null })
   }, [])
-  return { ...state, trigger, reset }
+  const clearError = useCallback(() => setState((current) => ({ ...current, error: null })), [])
+  return { ...state, trigger, reset, clearError }
 }

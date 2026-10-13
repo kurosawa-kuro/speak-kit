@@ -1,12 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { aiReasonLabel } from "../ui/labels"
-import { post } from "../ui/rpc"
+import { useEffect } from "react"
+import { useRpc } from "../../_hooks/use-rpc"
+import { usd } from "../../_lib/format"
+import { aiReasonLabel } from "../../_lib/labels"
 
 const AI_FEATURES = ["文字回答の AI 採点", "会話相手の返答", "言えなかった表現の候補の抽出", "混同ペアの違いの下書き"]
-
-const usd = (value) => `$${Number(value).toFixed(2)}`
 
 function Row({ label, children }) {
   return (
@@ -18,29 +17,19 @@ function Row({ label, children }) {
 }
 
 export function Settings() {
-  const [view, setView] = useState(null)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState("")
+  const load = useRpc("skill_trainer_get_settings_v1")
+  const save = useRpc("skill_trainer_save_settings_v1")
 
   useEffect(() => {
-    post("skill_trainer_get_settings_v1")
-      .then((body) => (body.ok ? setView(body.data) : setError("設定を読み込めませんでした。")))
-      .catch(() => setError("設定を読み込めませんでした。"))
+    load.trigger({})
   }, [])
 
-  async function toggleAi() {
-    if (!view || saving) return
-    setSaving(true)
-    setError("")
-    try {
-      const body = await post("skill_trainer_save_settings_v1", { ai_enabled: !view.settings.aiEnabled })
-      if (body.ok) setView(body.data)
-      else setError("保存できませんでした。")
-    } catch {
-      setError("保存できませんでした。")
-    } finally {
-      setSaving(false)
-    }
+  const view = save.data ?? load.data
+  const error = load.error !== null ? "設定を読み込めませんでした。" : save.error !== null ? "保存できませんでした。" : ""
+
+  const toggleAi = () => {
+    if (!view || save.loading) return
+    save.trigger({ ai_enabled: !view.settings.aiEnabled })
   }
 
   if (!view) {
@@ -60,7 +49,7 @@ export function Settings() {
             role="switch"
             aria-checked={settings.aiEnabled}
             onClick={toggleAi}
-            disabled={saving}
+            disabled={save.loading}
             className={`h-9 rounded-full px-4 font-semibold transition-colors disabled:opacity-60 ${
               settings.aiEnabled ? "bg-emerald-700 text-white" : "bg-neutral-700 text-neutral-200"
             }`}

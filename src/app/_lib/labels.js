@@ -117,3 +117,42 @@ export function uiErrorMessage(value, fallback = "処理に失敗しました。
   if (typeof value !== "string" || value.trim() === "") return fallback
   return /[\u3040-\u30ff\u3400-\u9fff]/u.test(value) ? value : fallback
 }
+
+const VERDICT_LABELS = {
+  pending: "確認中",
+  success: "成功",
+  retry: "要復習",
+  ungraded: "確認できませんでした",
+}
+
+/** サーバーの verdict（pending / success / retry / ungraded）の見出し。 */
+export function verdictLabel(value) {
+  return VERDICT_LABELS[value] ?? "確認できませんでした"
+}
+
+const QUIZ_TYPE_LABELS = {
+  contrast: "表現を選ぶ",
+  meaning: "意味を選ぶ",
+  intent: "用途から選ぶ",
+  form: "文を選ぶ",
+}
+
+export function quizTypeLabel(value) {
+  return QUIZ_TYPE_LABELS[value] ?? ""
+}
+
+export const QUIZ_FILTERS = [
+  { value: "", label: "すべて" },
+  { value: "meaning", label: QUIZ_TYPE_LABELS.meaning },
+  { value: "intent", label: QUIZ_TYPE_LABELS.intent },
+  { value: "contrast", label: QUIZ_TYPE_LABELS.contrast },
+]
+
+export const PRACTICE_MODES = ["controlled_recall", "slot_replacement", "contrast_drill", "recognition", "free_production"]
+  .map((value) => ({ value, label: trainingModeLabel(value) }))
+
+export const TALK_SCENARIOS = [
+  { value: "teacher", label: "講師と話す", description: "英語教師が簡単な英語で助けながら会話を進める" },
+  { value: "learner", label: "学習者同士で話す", description: "同じレベルの学習者としてカジュアルに雑談する" },
+  { value: "free_talk", label: "自由に話す", description: "自然な会話パートナーと自由に話す" },
+]

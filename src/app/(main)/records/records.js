@@ -1,7 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRpc } from "../ui/use-rpc"
+import { ErrorCard, LoadingCard, Metric, SectionTitle } from "../../_components/ui"
+import { useRpc } from "../../_hooks/use-rpc"
+import { date, percent, ratio, seconds } from "../../_lib/format"
 import {
   axisLabel,
   capabilityLabel,
@@ -11,15 +13,7 @@ import {
   observerLabel,
   uiErrorMessage,
   weaknessLabel,
-} from "../ui/labels"
-
-function percent(success, graded) {
-  return `${Math.round((success / graded) * 100)}%`
-}
-
-function seconds(ms) {
-  return `${(ms / 1000).toFixed(1)}秒`
-}
+} from "../../_lib/labels"
 
 function displayPhrase(phrase) {
   return phrase.replace(/\.\.\.\./g, "...")
@@ -30,30 +24,15 @@ function talkValue(summary) {
   return `${summary.talkSessions}回`
 }
 
-function Metric({ label, value }) {
-  return (
-    <div className="rounded-md bg-neutral-800 px-2.5 py-2">
-      <p className="text-[10px] text-neutral-500">{label}</p>
-      <p className="mt-0.5 text-sm font-semibold text-neutral-100">{value}</p>
-    </div>
-  )
-}
-
+/** 選んで答えた数と書いて答えた数。「見れば分かるが…」はサーバーの recognizedNotRecalled で出す。 */
 function ChoiceTextMetrics({ entry }) {
-  const chooseRate = entry.choiceSuccess / entry.choiceGraded
-  const writeWeak = entry.textGraded === 0 || entry.textSuccess / entry.textGraded < 0.8
   return (
     <>
       <div className="mt-1 grid grid-cols-2 gap-2">
-        <Metric label="選んで答える" value={`${entry.choiceSuccess}/${entry.choiceGraded}　${percent(entry.choiceSuccess, entry.choiceGraded)}`} />
-        <Metric
-          label="書いて答える"
-          value={entry.textGraded === 0 ? "未測定" : `${entry.textSuccess}/${entry.textGraded}　${percent(entry.textSuccess, entry.textGraded)}`}
-        />
+        <Metric label="選んで答える" value={ratio(entry.choiceSuccess, entry.choiceGraded)} />
+        <Metric label="書いて答える" value={ratio(entry.textSuccess, entry.textGraded)} />
       </div>
-      {chooseRate >= 0.9 && writeWeak && (
-        <p className="mt-1 text-sm text-amber-200">見れば分かるが、自力ではまだ出ない</p>
-      )}
+      {entry.recognizedNotRecalled && <p className="mt-1 text-sm text-amber-200">見れば分かるが、自力ではまだ出ない</p>}
     </>
   )
 }
@@ -73,36 +52,17 @@ export function Records() {
 
   return (
     <>
-      {progress.loading && (
-        <div className="flex items-center justify-center gap-3 rounded-xl border border-neutral-800 bg-neutral-900 px-6 py-16">
-          <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          <span>学習記録から再計算中...</span>
-        </div>
-      )}
+      {progress.loading && <LoadingCard>学習記録から再計算中...</LoadingCard>}
 
       {!progress.loading && progress.error !== null && (
-        <div className="rounded-xl border border-neutral-800 bg-neutral-900 px-5 py-6">
-          <div className="flex gap-3">
-            <span className="text-amber-400">⚠</span>
-            <p className="text-sm text-neutral-300">
-              {uiErrorMessage(progress.error, "学習記録を読み込めませんでした。もう一度お試しください。")}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => progress.trigger({})}
-            className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-neutral-800 text-sm font-semibold"
-          >
-            ↻ 再試行
-          </button>
-        </div>
+        <ErrorCard message={progress.error} fallback="学習記録を読み込めませんでした。もう一度お試しください。" onRetry={() => progress.trigger({})} />
       )}
 
       {!progress.loading && progress.error === null && data && (
         <>
           {weekly && (
             <section>
-              <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">今週</p>
+              <SectionTitle>今週</SectionTitle>
               <div className="mt-2 rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-4">
                 <div className="grid grid-cols-3 gap-2">
                   <Metric label="練習" value={`${weekly.practiceDays}日`} />
@@ -265,7 +225,7 @@ export function Records() {
           {(detailsOpen || !weekly) && (
             <>
               <section>
-                <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">会話の記録</p>
+                <SectionTitle>会話の記録</SectionTitle>
                 <div className="mt-2 rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-4">
                   <p className="text-2xl font-bold">{data.talkSummary.totalSessions}セッション</p>
                   <p className="mt-1 text-xs text-neutral-500">会話全体の記録です。個別の習得度へは直接加点しません。</p>
@@ -277,14 +237,14 @@ export function Records() {
                     <Metric label="日本語に切り替えた回数" value={`${data.talkSummary.totalJapaneseFallbackCount}回`} />
                     <Metric
                       label="平均応答時間"
-                      value={data.talkSummary.avgLatencyMs === null ? "未測定" : `${(data.talkSummary.avgLatencyMs / 1000).toFixed(1)}秒`}
+                      value={seconds(data.talkSummary.avgLatencyMs)}
                     />
                   </div>
                 </div>
               </section>
 
               <section>
-                <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">表現ごとの習得状況</p>
+                <SectionTitle>表現ごとの習得状況</SectionTitle>
                 <div className="mt-2 grid grid-cols-1 gap-3 xl:grid-cols-2">
                   {data.skills.map((skill) => (
                     <div key={skill.skillKey} className="rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-4">
@@ -313,17 +273,17 @@ export function Records() {
                             />
                             <Metric
                               label="成功率"
-                              value={capability.successRate === null ? "未測定" : `${Math.round(capability.successRate * 100)}%`}
+                              value={percent(capability.successRate)}
                             />
                             <Metric
                               label="回答時間の中央値"
-                              value={capability.p50LatencyMs === null ? "未測定" : `${(capability.p50LatencyMs / 1000).toFixed(1)}秒`}
+                              value={seconds(capability.p50LatencyMs)}
                             />
                             <Metric label="判定の確かさ" value={`${capability.confidence}%`} />
                             <Metric label="観測窓" value={`${capability.evidenceWindowDays}日`} />
                             <Metric
                               label="最終観測"
-                              value={capability.lastObservedAt === null ? "未測定" : new Date(capability.lastObservedAt).toLocaleDateString("ja-JP")}
+                              value={date(capability.lastObservedAt)}
                             />
                           </div>
                         </div>
@@ -352,7 +312,7 @@ export function Records() {
               </section>
 
               <section>
-                <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">採点の状態</p>
+                <SectionTitle>採点の状態</SectionTitle>
                 <div className="mt-2 rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-4">
                   {data.graderStats.length === 0 ? (
                     <p className="text-sm text-neutral-500">採点記録なし</p>

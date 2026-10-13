@@ -2,7 +2,9 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { boundaryCrossed, folded } from "../server/domain/boundary.mjs"
 import { learnerPhrase, normalizeAnswer } from "../server/domain/normalize.mjs"
+import { recognizedNotRecalled, verdict, verdictFields } from "../server/domain/verdict.mjs"
 import { costUsd, overLimit } from "../server/ai/usage.mjs"
+import { keyFromPattern } from "../server/services/candidates.mjs"
 
 test("normalizeAnswer folds case, punctuation and contractions", () => {
   assert.equal(normalizeAnswer("I'm tired."), "i am tired")
@@ -30,4 +32,28 @@ test("overLimit trips at the daily or monthly cap", () => {
   assert.equal(overLimit(base), false)
   assert.equal(overLimit({ ...base, dayUsd: 2 }), true)
   assert.equal(overLimit({ ...base, monthUsd: 20 }), true)
+})
+
+test("verdict decides the headline and the regrade button", () => {
+  assert.equal(verdict("pending", null), "pending")
+  assert.equal(verdict("graded", "success"), "success")
+  assert.equal(verdict("graded", "failure"), "retry")
+  assert.equal(verdict("ungraded", null), "ungraded")
+  assert.equal(verdict("invalid", null), "ungraded")
+  assert.deepEqual(verdictFields("ungraded", null), { verdict: "ungraded", canRegrade: true })
+  assert.deepEqual(verdictFields("graded", "failure"), { verdict: "retry", canRegrade: false })
+})
+
+test("recognizedNotRecalled uses the 90% choice and 80% writing thresholds", () => {
+  assert.equal(recognizedNotRecalled({ choiceSuccess: 9, choiceGraded: 10, textSuccess: 0, textGraded: 0 }), true)
+  assert.equal(recognizedNotRecalled({ choiceSuccess: 9, choiceGraded: 10, textSuccess: 8, textGraded: 10 }), false)
+  assert.equal(recognizedNotRecalled({ choiceSuccess: 8, choiceGraded: 10, textSuccess: 0, textGraded: 0 }), false)
+  assert.equal(recognizedNotRecalled({ choiceSuccess: 0, choiceGraded: 0, textSuccess: 0, textGraded: 0 }), false)
+})
+
+test("keyFromPattern makes a YAML-valid key", () => {
+  assert.equal(keyFromPattern("I was about to say that."), "I_WAS_ABOUT_TO_SAY_THAT")
+  assert.equal(keyFromPattern("24/7 support"), "X_24_7_SUPPORT")
+  assert.equal(keyFromPattern("…"), "CANDIDATE")
+  assert.ok(keyFromPattern("one two three four five six seven eight nine ten eleven").length <= 40)
 })

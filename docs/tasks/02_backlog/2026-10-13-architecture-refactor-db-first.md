@@ -662,3 +662,39 @@ migration の作り直し:
 - `repo/*` に SQL を移すこと。読みの SQL（計画・進み具合・クイズ）は、まだ各サービスの中にある。学習者の `'default'` も、読みの SQL には直書きが残る（書く側は文脈の `learnerKey` を使う）。
 - 差分の計算（`planSync`）を DB なしの純粋な関数にすること。
 - 第 2 段で見送った DB の形の変更（`quiz_attempts`・`confusion_events`・会話のターンの列・確認問題の版）。
+
+### 第 4 段（2026-10-13 20 時台）
+
+やったこと:
+
+- 画面を App Router の実ルートにした。`/` は `/today` へ転送する。
+  - `src/app/(main)/{today,train,talk,records,settings}/page.js`。記録の URL は `/progress` から `/records` に変えた。
+  - ヘッダーとタブは `(main)/layout.js` と `_components/tabs.js`（`next/link` と `usePathname`）。リロード・戻る・リンクの共有が効く。
+  - 自前のルーター（`shell.js`、`ui/nav.js`）は消した。
+- 共通の部品とフックを作り、各画面のコピーを置き換えた。
+  - `_components/ui.js`: `Spinner`、`LoadingCard`、`ErrorCard`、`Metric`、`AiUnavailableBanner`、`BoundaryPair`、`SectionTitle`。
+  - `_hooks/`: `use-rpc.js`（`clearError` を足した。HTTP が 4xx/5xx でも本文の envelope を読む）、`use-grade-poller.js`（採点待ちの問い合わせ）、`use-confusion-probe.js`（次に出す確認問題）。
+  - `_lib/`: `labels.js`（理由・見出し・クイズの種類・練習方法・会話相手の一覧を 1 か所に）、`format.js`（%・秒・日付・ドル）、`uuid.js`、`rpc.js`、`keys.js`。
+- 練習の画面（430 行の 1 関数）を分けた: `train.js`（切り替え）、`quick-quiz.js`、`practice.js`（計画モードと自由練習）、`exercise-card.js`、`answer-history.js`、`pair-form.js`、`mode-picker.js`。
+- 業務の判断をサーバーへ移した。
+  - 回答の見出しと再判定のボタン: 応答に `verdict`（`pending` / `success` / `retry` / `ungraded`）と `canRegrade` を足した（`domain/verdict.mjs`）。画面は `verdictLabel` で文言にするだけ。
+  - クイズの正誤の表示: 文字列の一致ではなく、応答の `correctOptionId` で見る。取り違えたラベル（`confusedLabel`）もサーバーが出す。
+  - 「見れば分かるが、自力ではまだ出ない」（選んで 90% 以上・書いて 80% 未満）: `quickQuiz` の各項目に `recognizedNotRecalled` を足した。
+  - 候補の承認: 画面は候補の番号と判断だけを送る。key（候補の文から作る。使われていれば `_C<番号>` を付ける）、例文、カテゴリはサーバーが決める。画面の `FREEZE_<id>` と `category: "OUTPUT"` はなくなった。
+- 会話の画面は、ほかのタブへ移ると（画面が外れると）会話をサーバーで終える。
+
+確かめたこと:
+
+- `npm test`: 41 件中 41 件が通った。新しいテストは、`verdict` と再判定の可否、「見れば分かるが…」のしきい値、候補の文から作る key、クイズの応答の `correctOptionId`、完全一致の回答の `verdict: success`。
+- `NEXT_DIST_DIR=.next-build npx next build`: 成功。ルートは `/today`・`/train`・`/talk`・`/records`・`/settings`・`/api/[name]`。
+- 開発サーバー（3000）で、`/` が `/today` へ 307、各ルートが 200。
+- ブラウザで確かめたこと:
+  - タブ（リンク）で各画面へ移れ、ブラウザの「戻る」で前の画面に戻る。
+  - クイズで間違った選択肢を選ぶと、正解の選択肢が `correctOptionId` で緑になり、選んだものが黄色になる。
+  - 実践練習で、一致しない回答が「確認中」→（本物の AI の採点のあと）「要復習」と解説に変わった。
+  - 計画モード（`/train?plan=today`）で 1 問目が出た。記録・会話・設定の画面が出た。設定の「今日の利用額」は $0.01。
+- この確認で、`speak_kit` に練習の回答 2 件とクイズの回答 1 件が残っている。
+
+見送ったもの:
+
+- 記録の画面（`records.js`）と会話の画面（`talk.js`）は、共通の部品に置き換えたが、ファイルは分けていない。

@@ -26,6 +26,9 @@ test("choice golden path does not require an AI key", async () => {
   assert.equal(submitted.ok, true, JSON.stringify(submitted))
   assert.equal(submitted.code, "ok")
   assert.ok(submitted.data.outcome === "success" || submitted.data.outcome === "failure")
+  assert.ok(item.options.some((option) => option.id === submitted.data.correctOptionId))
+  assert.equal(submitted.data.selectedOptionId, item.options[0].id)
+  assert.equal(submitted.data.outcome === "success", submitted.data.correctOptionId === item.options[0].id)
 
   const progress = await dispatch("skill_trainer_get_progress_v2", {})
   assert.equal(progress.ok, true)
@@ -34,6 +37,22 @@ test("choice golden path does not require an AI key", async () => {
   const choiceGraded = [...progress.data.quickQuiz.pairs, ...progress.data.quickQuiz.skills]
     .reduce((sum, entry) => sum + entry.choiceGraded, 0)
   assert.ok(choiceGraded >= 1)
+  for (const entry of [...progress.data.quickQuiz.pairs, ...progress.data.quickQuiz.skills]) {
+    assert.equal(typeof entry.recognizedNotRecalled, "boolean")
+  }
+
+  const practice = await dispatch("skill_trainer_get_practice_v2", { practice_id: crypto.randomUUID(), training_mode: "controlled_recall" })
+  const exercise = practice.data.exercise
+  if (!exercise.confusionProbeId) {
+    const exact = await dispatch("skill_trainer_submit_attempt_v2", {
+      attempt_id: crypto.randomUUID(),
+      exercise_instance_id: exercise.exerciseInstanceId,
+      answer_text: exercise.expectedReference,
+      latency_ms: 1000,
+    })
+    assert.equal(exact.data.verdict, "success", JSON.stringify(exact.data))
+    assert.equal(exact.data.canRegrade, false)
+  }
 
   const freeText = await dispatch("skill_trainer_submit_attempt_v2", {
     response_mode: "free_text",

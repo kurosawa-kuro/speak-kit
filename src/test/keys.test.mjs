@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { isImeEnter, isSubmitEnter } from "../app/ui/keys.js"
+import { isImeEnter, isSubmitEnter } from "../app/_lib/keys.js"
 
 test("変換中の Enter は送信しない（Chrome: isComposing）", () => {
   const event = { key: "Enter", keyCode: 13, nativeEvent: { isComposing: true } }

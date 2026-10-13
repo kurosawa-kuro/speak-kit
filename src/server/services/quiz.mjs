@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto"
+import { recognizedNotRecalled } from "../domain/verdict.mjs"
 import { envelope, validationError } from "../http/envelope.mjs"
 import { query, withTransaction } from "../db.mjs"
 
@@ -240,10 +241,13 @@ async function resultPayload(item, selected, success, promoted) {
       quizType: item.quiz_type,
       prompt: item.prompt,
       outcome: success ? "success" : "failure",
+      selectedOptionId: selected,
+      correctOptionId: item.correct_option_id,
       selectedText: selectedPair[0],
       selectedKind: selectedPair[1],
       correctText: correctPair[0],
       correctLabel,
+      confusedLabel: pair && selectedPair[1] === "pair" ? (correctLabel === pair.label_a ? pair.label_b : pair.label_a) : null,
       difference,
       skill,
       itemStable: stable.rows[0]?.stable === true,
@@ -498,7 +502,7 @@ export async function quizProgress() {
       textGraded: row.graded_count,
       choiceP50LatencyMs: row.choice_p50 == null ? null : Math.round(Number(row.choice_p50)),
       stableItems: row.stable_items,
-    })),
+    })).map((entry) => ({ ...entry, recognizedNotRecalled: recognizedNotRecalled(entry) })),
     skills: skills.rows.map((row) => ({
       skillKey: row.stable_key,
       form: displayForm(row.canonical_form),
@@ -509,7 +513,7 @@ export async function quizProgress() {
       textSuccess: row.text_success,
       stableItems: row.stable_items,
       itemCount: row.item_count,
-    })),
+    })).map((entry) => ({ ...entry, recognizedNotRecalled: recognizedNotRecalled(entry) })),
   }
 }
 

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto"
 import { gradeDecision } from "../ai/grade.mjs"
 import { normalizeAnswer } from "../domain/normalize.mjs"
 import { hashParts } from "../domain/hash.mjs"
+import { verdictFields } from "../domain/verdict.mjs"
 import { envelope, validationError } from "../http/envelope.mjs"
 import { logError } from "../http/errors.mjs"
 import { query, withTransaction } from "../db.mjs"
@@ -10,6 +11,11 @@ import { DERIVATION, estimateAndDiagnosis } from "./learning.mjs"
 
 // 1 つの回答の書き込み（回答・採点・証拠・計画の完了・診断・混同の記録）は、1 つのトランザクションに入れる。
 // AI の採点はトランザクションの外で先に済ませる。後回しにした採点は grading_claims で二重に走らせない。
+
+/** 回答の応答。verdict と canRegrade を足す。 */
+function gradedEnvelope(code, data) {
+  return envelope(true, code, { ...data, ...verdictFields(data.gradingStatus, data.outcome) }, null)
+}
 
 const SUPPORTED_DIMENSIONS = ["communication", "semantic", "intent", "form", "policy", "target_skill_usage"]
 const CLAIM_STALE = "2 minutes"
@@ -218,7 +224,7 @@ async function existingAttemptResponse(attemptId) {
   )
   const row = found.rows[0]
   if (!row) return null
-  return envelope(true, "idempotent_replay", {
+  return gradedEnvelope("idempotent_replay", {
     attemptId,
     exerciseInstanceId: row.exercise_instance_id,
     actual: row.actual,
@@ -230,11 +236,11 @@ async function existingAttemptResponse(attemptId) {
     outcome: row.outcome,
     expectedReference: row.expected_reference,
     confusion: await noticeForAttempt(attemptId),
-  }, null)
+  })
 }
 
 function pendingEnvelope(attemptId, exerciseInstanceId, actual) {
-  return envelope(true, "ok", {
+  return gradedEnvelope("ok", {
     attemptId,
     exerciseInstanceId,
     actual,
@@ -244,7 +250,7 @@ function pendingEnvelope(attemptId, exerciseInstanceId, actual) {
     reason: null,
     evidenceId: null,
     outcome: null,
-  }, null)
+  })
 }
 
 /** 後回しの採点を引き受ける。ほかが進めている間（2 分以内）は false。 */
@@ -367,7 +373,7 @@ export async function submitFreeText(operation, request) {
     return commitGrade(client, operation.learnerKey, attempt.attemptId, context, attempt.actual, decision, latencyMs, attempt.occurredAt)
   })
   if (!committed) return replayIfSame()
-  return envelope(true, "ok", {
+  return gradedEnvelope("ok", {
     attemptId: attempt.attemptId,
     exerciseInstanceId: attempt.exerciseInstanceId,
     gradingId: committed.gradingId,
@@ -381,7 +387,7 @@ export async function submitFreeText(operation, request) {
     confusion: await noticeForAttempt(attempt.attemptId),
     estimate: committed.learned.estimate,
     diagnosis: committed.learned.diagnosis,
-  }, null)
+  })
 }
 
 function requiredDimensions(rubric) {
@@ -566,7 +572,7 @@ async function regradeReplayEnvelope(context, regradeId, attemptId, prior) {
     context.policy_version,
     prior.adopted_for_evidence && prior.evidence_id != null,
   )
-  return envelope(true, "idempotent_replay", {
+  return gradedEnvelope("idempotent_replay", {
     regradeId,
     attemptId,
     gradingId: prior.grading_id,
@@ -581,7 +587,7 @@ async function regradeReplayEnvelope(context, regradeId, attemptId, prior) {
     expectedReference: context.expected_reference,
     estimate: learned.estimate,
     diagnosis: learned.diagnosis,
-  }, null)
+  })
 }
 
 export async function regradeAttempt(operation, request) {
@@ -616,7 +622,7 @@ export async function regradeAttempt(operation, request) {
     return { gradingId, evidenceId, learned }
   })
   if (result.raced) return regradeReplayEnvelope(context, regradeId, attemptId, result.raced)
-  return envelope(true, "ok", {
+  return gradedEnvelope("ok", {
     regradeId,
     attemptId,
     gradingId: result.gradingId,
@@ -631,5 +637,5 @@ export async function regradeAttempt(operation, request) {
     expectedReference: context.expected_reference,
     estimate: result.learned.estimate,
     diagnosis: result.learned.diagnosis,
-  }, null)
+  })
 }

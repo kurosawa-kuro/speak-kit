@@ -1,7 +1,5 @@
-"use client"
-
-import { Shell } from "./shell"
+import { redirect } from "next/navigation"
 
 export default function Page() {
-  return <Shell />
+  redirect("/today")
 }
