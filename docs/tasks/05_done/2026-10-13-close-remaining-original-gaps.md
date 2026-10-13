@@ -11,7 +11,7 @@
 
 `private-ops` の学習｜英会話（画面は `frontend/retool/app-mirror/skill-trainer/frontend`、動作は `apps/skill-trainer/src/skill_trainer_adaptive.rs`、`skill_trainer_confusion.rs`、`skill_trainer_quiz.rs`、`domains/english_conversation.rs`）と、speak-kit の機能差を 0 にする。対象は 2026-10-13 に Rust と画面コードを突き合わせて見つけた 47 件。
 
-前のタスク `03_active/2026-10-13-match-original-training-loop.md` の 26 箇所は、本線が通るところまで来た。ただし同じ機能とまでは言えない。このタスクはその残りを引き取る。
+前のタスク `05_done/2026-10-13-match-original-training-loop.md` の 26 箇所は、本線が通るところまで来た。ただし同じ機能とまでは言えない。このタスクはその残りを引き取る。
 
 ## Value
 
@@ -205,7 +205,7 @@ choice のキー無し経路が Anthropic を待つか、書き込み先が `spe
   - 写しで `CHUNK_FEEL_BETTER` に `controlled_recall` を 3 回正解させると、`route.talkReady` が `[]` から `["CHUNK_FEEL_BETTER"]` になった。
   - 会話で「feel better」と送ると、`gradingStatus` は `graded`、`attributedSkillKeys` は `["CHUNK_FEEL_BETTER"]`、`evidenceIds` は 1 件。`talkReady` は `[]` に戻った。
   - 抽出の SQL は Rust の `skill_trainer_quiz.rs` 687〜700 行と同じ。
-- キー無し: `env -u ANTHROPIC_API_KEY node --test test/*.test.mjs` は 8/8 pass（写しで実行）。
+- キー無し: `env -u ANTHROPIC_API_KEY node --test test/*.test.mjs`（`npm test` の中身と同じ）は 8/8 pass（写しで実行）。
   - core の 4 ファイルに `lib/ai/client` と `api.anthropic.com` は無い（`test/ai-isolation.test.mjs` と `rg`）。
   - キー unset のときの応答時間:
     - free_text（`defer_unknown`）は 6〜7ms で `pending`。再送 17ms で `ungraded`（`grader unavailable: ANTHROPIC_API_KEY is unset`）。
@@ -215,7 +215,7 @@ choice のキー無し経路が Anthropic を待つか、書き込み先が `spe
 ### 項目ごと
 
 - 1: 上の弱点診断を参照。今日の「今の重点課題」と記録の重点課題・克服は、診断から出る。
-- 2: 写しで `CAUSE_THATS_WHY` の想起の正解を 2 日前へずらし、計画を作り直した。`RETENTION` / `RETENTION_1D` の active 行ができた（`evidence_snapshot.reason = retention_due`）。計画に「確かめる」（`spaced_retrieval`、`retention_due:RETENTION_1D`）が出た。
+- 2: 写しで、追記のみの制約を写しの中だけで外した。`CAUSE_THATS_WHY` の想起の正解を 2 日前へずらし、進行中の計画を完了扱いにしてから、計画を作り直した。`RETENTION` / `RETENTION_1D` の active 行ができた（`evidence_snapshot.reason = retention_due`）。計画に「確かめる」（`spaced_retrieval`、`retention_due:RETENTION_1D`）が出た。
 - 3・4: `mistake` 行と、境界の行・`notice_for_attempt` の応答。採点の応答は `confusion`、`estimate`、`diagnosis`、`dimensions` を返す。再判定の応答は `regradeId`、`observerVersion`、`adoptedForEvidence` を返す。
 - 5: 計画の回答「Would you like to have lunch together?」は、まず `pending`（項目は `awaiting_grade`）で返った。2 秒ごとの再送で AI の成功と日本語の理由を受け取った。
 - 6: owner 判断で対象外。
@@ -223,17 +223,26 @@ choice のキー無し経路が Anthropic を待つか、書き込み先が `spe
   - 同じ `attempt_id` で回答時間だけ変えると、`idempotency_conflict`（`attempt_id was already used with different immutable input`）。
   - まったく同じ再送は `idempotent_replay`。
   - 画面から送った `session_id` と `occurred_at` は `training_attempts` に保存される。
-- 8: 計画の応答は、Verify 以外の正解済みの項目を出さない。並ぶのは planned / in_progress / awaiting_grade だけ（Rust の `fetch_plan_response` と同じ）。
+  - 再送は `replayExisting` を通る。採点が無ければ採点し、採点済みで証拠が無ければ回復用の再判定（`recoveryId`）、それ以外は `repairAttemptSideEffects`（計画の項目と計画の完了、推定と診断の更新）。SQL と分岐は Rust の `repair_attempt_side_effects` と同じ。
+  - 途中で失敗した状態を作っての観測はしていない。
+- 8: 計画を表示するとき、Verify 以外の正解済みの項目を `skipped` にする（`lib/plan.mjs` 55 行）。応答に並ぶのは planned / in_progress / awaiting_grade だけ（Rust の `fetch_plan_response` と同じ）。
 - 9〜13: 今日の画面は Today.tsx の写し。計画モード、目的 · 理由のバッジ、空・失敗・0 件の表示、弱点の種類のバッジを画面で確認した。
 - 14〜20: 実践練習は Train.tsx の写しで、次を画面で確認した。
   - 回答時間は実測で送る。「再判定する」が出る。
   - 確認問題のカード: 失敗は「要復習」と 5 項目、成功は「境界のこちら側は分かれました。」。期限の来た確認問題が先に出る。
   - 「戻る」、今日の練習／自由練習、`?plan=today` / `?tab=practice&skill=`。
+    - 19 は、参照元と同じく画面内の移動（`navigate('/train?plan=today')` など）で開く。参照元のルーターは Retool 側にあり、speak-kit もブラウザの URL 欄からは開かない。
   - 英語のエラーは `uiErrorMessage` で日本語の定型文になる。
 - 21: 混同ペアの AI 下書きは `json_schema` の構造化出力を使う。
 - 22〜25: クイズの結果パネル（正解 ✓、この表現、次へ（Enter））、問題の種類、選択肢の色を画面で確認した。
 - 26〜33・35:
-  - 会話の役割文・冒頭・各ターンの指示は、`english_conversation.rs` の全文。
+  - 26: `TEACHER_PERSONA`（141 字）、`LEARNER_PERSONA`（104 字）、`FREE_TALK_PERSONA`（113 字）は、`english_conversation.rs` と一字一句同じ。`TALK_OPENING_USER`、`TALK_OPENING_FALLBACK`、`TALK_TURN_FALLBACK`、`CANDIDATE_EXTRACTION_SYSTEM` も同じ。
+  - 27: 各ターンの判定に、その会話のそれまでのターンを渡す（`lib/talk.mjs` の `judgeTurn(scenario, history, message)`）。
+  - 28: 実 DB の `CONVERSATION_USAGE` 1 行と、写しでの `CHUNK_FEEL_BETTER`（上の Done Condition）。帰属は、発言と例文の完全一致（末尾の `?.!` を除く）。
+  - 29: キー無しの返答は `TALK_TURN_FALLBACK`、観察は `ungraded`。
+  - 31: 会話画面は、入力欄を開いてからの実測を `latency_ms` で送る。
+  - 32: 候補抽出は `CANDIDATE_EXTRACTION_SYSTEM` と、未昇格の既存候補の一覧で行う。失敗かキー無しのときは `pending_retry` を返し、次の終了で再試行する。
+  - 33: 終了の応答は `scenario`、`durationSeconds`、`candidateExtractionStatus`、`promotedSkills` を返す。
   - teacher で AI の冒頭と返答が吹き出しで出た。
   - 終了画面には次が出た。
     - 「3ターン・0分」と 6 枚の指標カード（平均 10 秒）
@@ -250,7 +259,7 @@ choice のキー無し経路が Anthropic を待つか、書き込み先が `spe
 - 36〜43: 記録は Progress.tsx の写しで、次を画面で確認した。
   - 詳細の開閉、6 セッション・平均 3.2 秒、表現 50 枚、採点の状態一覧。
   - 「覚えたものを再チェック」は、準備しています → 再チェック待ち 2 問 → 注記。
-- 44: 写しで、AI 採点済みの回答 84063ebf に人の観察（`semantic` だけ fail）を記録した。結果は `outcome: failure`、`adoptedForEvidence: true`。有効な証拠は `ai / success` から `human / failure` に替わった。
+- 44: 写しで、AI 採点済みの回答 84063ebf に人の観察（`semantic` だけ fail）を記録した。結果は `outcome: failure`、`adoptedForEvidence: true`。有効な証拠は `ai / success` から `human / failure` に替わった。選ぶ順は、view `effective_capability_evidence` の `human` 3 > `deterministic` 2 > その他 1。
 - 45: `compare_observations` は `observationCount`、`hasOutcomeDisagreement`、各観察の `source`、`observerVersion`、`dimensions`、`outcome` を返した。
 - 46: `get_trace` は `plan_item_id` f4cc3572 で、次を返した。
   - `planId`、`exerciseInstanceId`、`attemptId`、`gradingId`、`evidenceId`、`diagnosisIds`
@@ -260,6 +269,13 @@ choice のキー無し経路が Anthropic を待つか、書き込み先が `spe
   - 全体: `status: not_passed`
   - 要件ごと: `status: insufficient_evidence` と `estimate`
   - `scenarioResults`: teacher と learner は `not_passed`、free_talk は `insufficient_evidence`
+  - 比較子は `>= <= > < ==` を扱い、それ以外は例外にする（`lib/gate.mjs`）。
+  - 集計は Phase 1 の有効な表現と、modality `text` / `conversation` に絞る（`lib/learning.mjs`）。Rust の `load_aggregate_estimate` と同じ条件。
+
+### 横断の突き合わせ
+
+- 画面の文言: 参照元の Today / Train / Talk / Progress / QuickQuiz / AppHeader / displayLabels から日本語の文字列を全部抜いた。speak-kit の対応するファイルに無いものは「アプリ一覧へ戻る」の 1 件だけ（対象外）。
+- 応答のキー: Rust の 4 ファイルの JSON キー（camelCase）のうち、speak-kit の `lib/` に無いものは `agreesWithPrimary` の 1 件だけ。これは影の採点（6、対象外）のキー。
 
 ### 参照元どおりに写した癖
 

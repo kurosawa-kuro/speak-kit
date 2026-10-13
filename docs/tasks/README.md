@@ -65,9 +65,9 @@
 
 | ファイル | 用途 |
 |---|---|
-| [03_active/2026-10-13-match-original-training-loop.md](03_active/2026-10-13-match-original-training-loop.md) | 元の英会話学習から外れている計画・記録・会話の 26 箇所。本線は通ったが、参照元と同じではない項目が残る |
+| [05_done/2026-10-13-match-original-training-loop.md](05_done/2026-10-13-match-original-training-loop.md) | 元の英会話学習から外れていた計画・記録・会話の 26 箇所。残りは 47 件のタスクへ引き継いで解消した |
 | [05_done/2026-10-13-close-remaining-original-gaps.md](05_done/2026-10-13-close-remaining-original-gaps.md) | 元の英会話学習との残りの差分 47 件（6 は owner 判断で対象外）。弱点診断の作成と解消、記憶確認、混同検知、今日の計画モード、会話での使用記録まで観測した |
-| [02_backlog/2026-10-13-move-code-under-src.md](02_backlog/2026-10-13-move-code-under-src.md) | プログラムコード（`app/`、`lib/`、`test/`）を `src/` 配下へ移す。Rust は置かない。owner の着手指示待ち |
+| [03_active/2026-10-13-move-code-under-src.md](03_active/2026-10-13-move-code-under-src.md) | プログラムコード（`app/`、`lib/`、`test/`）を `src/` 配下へ移す。Rust は置かない。`03_active/` にある |
 | [02_backlog/2026-10-13-settings-screen.md](02_backlog/2026-10-13-settings-screen.md) | 設定画面を作る。第一弾は「AI を使う／使わない」。ほかの設定項目の候補 28 件も一覧にした。owner の着手指示待ち |
 | [02_backlog/2026-10-13-content-yaml-in-data.md](02_backlog/2026-10-13-content-yaml-in-data.md) | 教材（表現・練習問題・クイズ・混同ペア）を `data/` の YAML で管理し、`npm run data:sync` で DB へ反映する。owner の着手指示待ち |
 | [05_done/2026-10-13-local-text-golden-path.md](05_done/2026-10-13-local-text-golden-path.md) | 参照元の SQL 28 本と dispatch 16 名をローカル Postgres `speak_kit` へ写し、キー無しの choice 経路を通した |
@@ -98,6 +98,6 @@
 ```
 
 進行中の本作業は
-[03_active/2026-10-13-match-original-training-loop.md](03_active/2026-10-13-match-original-training-loop.md)
+[03_active/2026-10-13-move-code-under-src.md](03_active/2026-10-13-move-code-under-src.md)
 である。クリーンアップ候補は
 [03_active/refactoring-candidates.md](03_active/refactoring-candidates.md) で管理する。

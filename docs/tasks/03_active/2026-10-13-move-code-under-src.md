@@ -38,7 +38,7 @@ speak-kit はフル Next.js であり、Rust は置かない。2026-10-13 に、
 - Tailwind v4（`@tailwindcss/postcss`）はソースを自動検出する。`globals.css` は `app/` と一緒に動く。
 - 書き換えが要るのは repo 直下からのパスで参照している箇所だけ:
   - `package.json` の `test` スクリプト（`node --test test/*.test.mjs`）
-  - ドキュメント中の `app/`、`lib/`、`test/` の記述（`README.md`、`CLAUDE.md`、`docs/02_architecture.md`、`docs/07_test_strategy.md`、`docs/英会話アプリ-コミュニティ配布を先に作り次段階へコピーする.md`、`docs/tasks/02_backlog/2026-10-13-close-remaining-original-gaps.md`）
+  - ドキュメント中の `app/`、`lib/`、`test/` の記述（`README.md`、`CLAUDE.md`、`docs/02_architecture.md`、`docs/07_test_strategy.md`、`docs/英会話アプリ-コミュニティ配布を先に作り次段階へコピーする.md`、`docs/tasks/05_done/2026-10-13-close-remaining-original-gaps.md`）
 - `.claude/rules/tests.md` は `**/*.test.*` でテストを拾うので、移動後も変更は要らない。
 - `docs/02_architecture.md` の「参照元」表と `CLAUDE.md`・`README.md` にある `src/domains/`、`src/testdata/`、`src/*.rs` は、参照元 repo（`private-ops/apps/skill-trainer`）の中のパスである。speak-kit の `src/` ではない。移動後に紛らわしくなるので、参照元の repo のパスだと分かる書き方に直す。
 
@@ -78,7 +78,7 @@ speak-kit/
 
 ## Plan
 
-1. 着手前に `git status` を見る。`app/`、`lib/`、`test/` に未コミットの変更があれば先にコミットさせるか、owner に確認する（`03_active/2026-10-13-match-original-training-loop.md` の作業と衝突させない）。
+1. 着手前に `git status` を見る。`app/`、`lib/`、`test/` に未コミットの変更があれば先にコミットさせるか、owner に確認する（`05_done/2026-10-13-match-original-training-loop.md` の作業と衝突させない）。
 2. 移動前の基準を取る: `npm test` の結果と、`npm run dev` で `http://localhost:3000/` と `POST /api/skill_trainer_get_today_plan_v2` の応答。
 3. Scope 1・2 の `git mv`。
 4. Scope 3・4 の `package.json` とテストの書き換え。
