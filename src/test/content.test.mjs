@@ -3,8 +3,8 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import test from "node:test"
-import { deriveDefinitions, derivePair, deriveSkillQuizzes, probeOptionId, skillOptionId } from "../lib/content/derive.mjs"
-import { hasPlaceholder, loadContent } from "../lib/content/schema.mjs"
+import { deriveDefinitions, derivePair, deriveSkillQuizzes, probeOptionId, skillOptionId } from "../server/content/derive.mjs"
+import { hasPlaceholder, loadContent } from "../server/content/schema.mjs"
 
 const coffee = {
   key: "TEST_GRAB_COFFEE",

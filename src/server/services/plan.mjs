@@ -1,6 +1,6 @@
-import { aiAvailability } from "./ai/isEnabled.mjs"
-import { envelope, validationError } from "./envelope.mjs"
-import { query, withTransaction } from "./db.mjs"
+import { availability } from "../ai/context.mjs"
+import { envelope, validationError } from "../http/envelope.mjs"
+import { query, withTransaction } from "../db.mjs"
 import { quizProgress, quizRoute } from "./quiz.mjs"
 import { createAdaptivePlan } from "./planner.mjs"
 import { listPairs, nextDueNotice, watchCount } from "./boundary.mjs"
@@ -44,7 +44,7 @@ function promptAlreadyMastered(promptExpr, domainId) {
   )`
 }
 
-async function planView(planId, domainId, code) {
+async function planView(context, planId, domainId, code) {
   const english = code === ENGLISH
   await query(
     `UPDATE skill_trainer.training_plan_items pi
@@ -124,13 +124,13 @@ async function planView(planId, domainId, code) {
       plan: items,
       dueConfusion,
       route: english ? await quizRoute() : null,
-      ...(await aiAvailability()),
+      ...availability(context),
     },
     null,
   )
 }
 
-export async function getTodayPlan(request) {
+export async function getTodayPlan(context, request) {
   const code = domainCode(request)
   const id = await domainId(code)
   if (!id) return validationError("unknown domain_code")
@@ -200,7 +200,7 @@ export async function getTodayPlan(request) {
   if (!planned.planId) {
     return envelope(true, "ok", { planId: null, primaryFocus: null, plan: [] }, null)
   }
-  return planView(planned.planId, id, code)
+  return planView(context, planned.planId, id, code)
 }
 
 export async function getProgress(request) {
@@ -496,4 +496,33 @@ export async function reviewCounts(domainId) {
           ))::int AS recheck`,
   )
   return { mastered: counted.rows[0].mastered, recheck: counted.rows[0].recheck }
+}
+
+/** 「覚えた」扱いを今の時点で区切り直す。飛ばした計画の項目も戻す。 */
+export async function resetReview(context, domainId) {
+  const requestedAt = await withTransaction(async (client) => {
+    const inserted = await client.query(
+      `INSERT INTO skill_trainer.review_resets (reset_id, learner_key, domain_id)
+       VALUES (gen_random_uuid(), $1, $2) RETURNING requested_at`,
+      [context.learnerKey, domainId],
+    )
+    await client.query(
+      `UPDATE skill_trainer.training_plan_items pi
+       SET status = 'planned', completed_at = NULL
+       FROM skill_trainer.training_plans p
+       WHERE pi.plan_id = p.plan_id
+         AND p.learner_key = $1
+         AND p.status = 'active'
+         AND p.domain_id = $2
+         AND pi.status = 'skipped'`,
+      [context.learnerKey, domainId],
+    )
+    return inserted.rows[0].requested_at
+  })
+  const review = await reviewCounts(domainId)
+  return envelope(true, "ok", {
+    requestedAt,
+    masteredPromptCount: review.mastered,
+    recheckDueCount: review.recheck,
+  }, null)
 }

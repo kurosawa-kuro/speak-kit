@@ -1,30 +1,34 @@
-import { getSettings } from "../settings.mjs"
+import { anthropicKey, config } from "../config.mjs"
+import { query } from "../db.mjs"
+import { getSettings } from "../services/settings.mjs"
+import { overLimit, usageTotals } from "./usage.mjs"
 
-export const AI_REASON_MESSAGES = {
-  setting_off: "設定で AI をオフにしています",
-  key_missing: "API キーが未設定です",
+/**
+ * 1 回の操作の「文脈」。AI を使えるかは、操作の最初にここで 1 度だけ決める。
+ * aiReason は setting_off（設定でオフ）/ key_missing（キーが無い）/ limit_reached（利用上限）/ null。
+ */
+export async function operationContext(db = { query }) {
+  const settings = await getSettings(db)
+  const keyConfigured = anthropicKey() !== null
+  const usage = await usageTotals(db)
+  const aiReason = !settings.aiEnabled
+    ? "setting_off"
+    : !keyConfigured
+      ? "key_missing"
+      : overLimit(usage)
+        ? "limit_reached"
+        : null
+  return {
+    learnerKey: config.learnerKey,
+    settings,
+    keyConfigured,
+    usage,
+    aiAvailable: aiReason === null,
+    aiReason,
+  }
 }
 
-export function hasAnthropicKey() {
-  const key = process.env.ANTHROPIC_API_KEY
-  return typeof key === "string" && key.trim().length > 0
-}
-
-/** AI を使えるかを、設定とキーの有無から 1 か所で決める。キーの値は返さない。 */
-export async function aiStatus() {
-  const keyConfigured = hasAnthropicKey()
-  const setting = (await getSettings()).aiEnabled
-  const reason = !setting ? "setting_off" : !keyConfigured ? "key_missing" : null
-  return { aiEnabled: reason === null, keyConfigured, setting, reason }
-}
-
-/** 画面へ返す形。aiReason は setting_off / key_missing / null。 */
-export async function aiAvailability() {
-  const status = await aiStatus()
-  return { aiAvailable: status.aiEnabled, aiReason: status.reason }
-}
-
-export async function aiEnabled() {
-  if (!hasAnthropicKey()) return false
-  return (await aiStatus()).aiEnabled
+/** 画面へ返す形。 */
+export function availability(context) {
+  return { aiAvailable: context.aiAvailable, aiReason: context.aiReason }
 }

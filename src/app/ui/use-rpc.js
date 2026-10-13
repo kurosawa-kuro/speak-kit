@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useRef, useState } from "react"
+import { aiReasonLabel } from "./labels"
 import { post } from "./rpc"
 
 export function useRpc(name) {
@@ -20,7 +21,10 @@ export function useRpc(name) {
       setState({ data: result.data, loading: false, error: null })
       return result.data
     }
-    setState((current) => ({ ...current, loading: false, error: result.error?.message || result.code || "" }))
+    const error = result.code === "ai_unavailable"
+      ? aiReasonLabel(result.data?.aiReason)
+      : result.error?.message || result.code || ""
+    setState((current) => ({ ...current, loading: false, error }))
     return null
   }, [name])
   const reset = useCallback(() => {

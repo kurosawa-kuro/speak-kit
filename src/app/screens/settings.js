@@ -2,18 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { aiReasonLabel } from "../ui/labels"
+import { post } from "../ui/rpc"
 
 const AI_FEATURES = ["文字回答の AI 採点", "会話相手の返答", "言えなかった表現の候補の抽出", "混同ペアの違いの下書き"]
 
-async function request(method, body) {
-  const response = await fetch("/api/settings", {
-    method,
-    headers: body ? { "content-type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-    cache: "no-store",
-  })
-  return response.json()
-}
+const usd = (value) => `$${Number(value).toFixed(2)}`
 
 function Row({ label, children }) {
   return (
@@ -30,7 +23,7 @@ export function Settings() {
   const [error, setError] = useState("")
 
   useEffect(() => {
-    request("GET")
+    post("skill_trainer_get_settings_v1")
       .then((body) => (body.ok ? setView(body.data) : setError("設定を読み込めませんでした。")))
       .catch(() => setError("設定を読み込めませんでした。"))
   }, [])
@@ -40,7 +33,7 @@ export function Settings() {
     setSaving(true)
     setError("")
     try {
-      const body = await request("POST", { ai_enabled: !view.settings.aiEnabled })
+      const body = await post("skill_trainer_save_settings_v1", { ai_enabled: !view.settings.aiEnabled })
       if (body.ok) setView(body.data)
       else setError("保存できませんでした。")
     } catch {
@@ -76,11 +69,13 @@ export function Settings() {
           </button>
         </Row>
         <Row label="API キー">{ai.keyConfigured ? "設定済み" : "未設定"}</Row>
-        <Row label="いまの状態">{ai.aiEnabled ? "AI を使っています" : aiReasonLabel(ai.reason)}</Row>
+        <Row label="いまの状態">{ai.aiAvailable ? "AI を使っています" : aiReasonLabel(ai.aiReason)}</Row>
+        <Row label="今日の利用額">{usd(ai.usage.dayUsd)} / {usd(ai.usage.dailyLimitUsd)}</Row>
+        <Row label="今月の利用額">{usd(ai.usage.monthUsd)} / {usd(ai.usage.monthlyLimitUsd)}</Row>
         {settings.aiEnabled && !ai.keyConfigured && (
           <p className="pb-3 text-sm text-amber-200">オンにしても、API キーが設定されるまで AI は使えません。キーはサーバーの環境変数 ANTHROPIC_API_KEY に置きます。</p>
         )}
-        {!ai.aiEnabled && (
+        {!ai.aiAvailable && (
           <div className="pb-3 text-sm text-neutral-300">
             <p>AI を使わない間は、次が使えません。練習・クイズ・記録はそのまま使えます。</p>
             <ul className="mt-1 list-disc pl-5 text-neutral-400">
@@ -96,6 +91,8 @@ export function Settings() {
         <Row label="保存先">
           {startup.database.kind === "local" ? `ローカル DB（${startup.database.name}）` : startup.database.name}
         </Row>
+        <Row label="AI のモデル">{startup.ai.model}</Row>
+        <Row label="AI の利用上限">1 日 {usd(startup.ai.dailyLimitUsd)}・1 か月 {usd(startup.ai.monthlyLimitUsd)}</Row>
       </section>
 
       {error && <p className="text-sm text-red-300">{error}</p>}

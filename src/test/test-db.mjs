@@ -1,4 +1,4 @@
-import { pool } from "../lib/db.mjs"
+import { pool } from "../server/db.mjs"
 
 /** DB に書くテストは最初にこれを import する。speak_kit_test 以外なら、何も書かずに止まる。 */
 const { rows } = await pool.query("SELECT current_database() AS name")

@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto"
-import { envelope, validationError } from "./envelope.mjs"
-import { query, withTransaction } from "./db.mjs"
+import { envelope, validationError } from "../http/envelope.mjs"
+import { query, withTransaction } from "../db.mjs"
 
 const SPACING = 3
 const PROMOTION_WINDOW = 10

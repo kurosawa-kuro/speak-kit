@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto"
-import { envelope, validationError } from "./envelope.mjs"
-import { query } from "./db.mjs"
-import { hashParts } from "./hash.mjs"
-import { aiAvailability } from "./ai/isEnabled.mjs"
+import { envelope, validationError } from "../http/envelope.mjs"
+import { query } from "../db.mjs"
+import { hashParts } from "../domain/hash.mjs"
+import { availability } from "../ai/context.mjs"
 import { duePractice } from "./boundary.mjs"
 import { loadPolicy } from "./learning.mjs"
 
@@ -58,7 +58,7 @@ function mastered(domainId) {
   )`
 }
 
-export async function getPractice(request) {
+export async function getPractice(context, request) {
   if (!isUuid(text(request, "practice_id"))) return validationError("practice_id must be a UUID")
   const mode = text(request, "training_mode")
   if (!mode) return validationError("training_mode is required")
@@ -68,7 +68,7 @@ export async function getPractice(request) {
   const domainId = domain.rows[0]?.id
   if (!domainId) return validationError("unknown domain_code")
   if (code === ENGLISH) {
-    const confusionPractice = await duePractice(await aiAvailability())
+    const confusionPractice = await duePractice(availability(context))
     if (confusionPractice) return envelope(true, "ok", confusionPractice, null)
   }
   const policyVersion = (await loadPolicy()).version
@@ -183,6 +183,6 @@ export async function getPractice(request) {
       expectedReference: served.expected_reference,
       modality: served.modality,
     },
-    ...(await aiAvailability()),
+    ...availability(context),
   }, null)
 }

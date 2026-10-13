@@ -1,22 +1,9 @@
 import pg from "pg"
+import { config } from "./config.mjs"
 
 const { Pool } = pg
 
-function connectionString() {
-  const url =
-    process.env.SPEAK_KIT_DATABASE_URL ||
-    "postgresql://kurosawa@localhost:5432/speak_kit"
-  const name = new URL(url).pathname.replace(/^\//, "")
-  if (name === "flow" || name === "") {
-    throw new Error("speak-kit refuses database flow")
-  }
-  if (name !== "speak_kit" && name !== "speak_kit_test") {
-    throw new Error(`speak-kit database must be speak_kit or speak_kit_test, got ${name}`)
-  }
-  return url
-}
-
-export const pool = new Pool({ connectionString: connectionString() })
+export const pool = new Pool({ connectionString: config.database.url, max: config.database.poolMax })
 
 export async function query(text, params) {
   return pool.query(text, params)

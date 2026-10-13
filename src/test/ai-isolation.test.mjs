@@ -1,12 +1,12 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { feedback, scenario, talk } from "../lib/ai/features.mjs"
+import { askClaude } from "../server/ai/client.mjs"
 
 const coreFiles = [
-  "lib/quiz.mjs",
-  "lib/plan.mjs",
-  "lib/dispatch.mjs",
+  "server/services/quiz.mjs",
+  "server/services/plan.mjs",
+  "server/dispatch.mjs",
   "app/api/[name]/route.js",
 ]
 
@@ -18,13 +18,22 @@ test("core files do not import the AI client", () => {
   }
 })
 
-test("unset key returns before any model call", async () => {
-  delete process.env.ANTHROPIC_API_KEY
-  const talkResult = await talk({ scenario: "teacher", message: "Hello" })
-  const feedbackResult = await feedback({ text: "I am tired." })
-  const scene = await scenario()
-  for (const result of [talkResult, feedbackResult, scene]) {
-    assert.equal(result.ok, false)
-    assert.equal(result.code, "ai_unavailable")
+test("an unavailable context returns before any model call", async () => {
+  const originalFetch = globalThis.fetch
+  let calls = 0
+  globalThis.fetch = async () => {
+    calls += 1
+    throw new Error("must not be called")
+  }
+  try {
+    for (const aiReason of ["setting_off", "key_missing", "limit_reached"]) {
+      const result = await askClaude({ aiAvailable: false, aiReason }, "test", "system", "user")
+      assert.equal(result.ok, false)
+      assert.equal(result.code, "ai_unavailable")
+      assert.deepEqual(result.data, { aiAvailable: false, aiReason })
+    }
+    assert.equal(calls, 0)
+  } finally {
+    globalThis.fetch = originalFetch
   }
 })

@@ -1,4 +1,4 @@
-import { query } from "./db.mjs"
+import { query } from "../db.mjs"
 
 export const ESTIMATOR = "capability-estimator-v1"
 export const DIAGNOSIS_RULE = "phase1-capability-diagnosis-v3"
@@ -135,9 +135,9 @@ function diagnosisJson(row) {
     : null
 }
 
-export async function refreshDiagnosis(skillId, capability, estimate, policy) {
+export async function refreshDiagnosis(skillId, capability, estimate, policy, db = { query }) {
   const windowDays = policy.config.evidence_window_days
-  const refs = await query(
+  const refs = await db.query(
     `SELECT evidence_id FROM skill_trainer.effective_capability_evidence
      WHERE skill_id = $1 AND capability = $2
        AND modality = CASE WHEN $2 = 'CONVERSATION_USAGE' THEN 'conversation' ELSE 'text' END
@@ -145,7 +145,7 @@ export async function refreshDiagnosis(skillId, capability, estimate, policy) {
      ORDER BY observed_at, evidence_id`,
     [skillId, capability, windowDays],
   )
-  const cause = await query(
+  const cause = await db.query(
     `SELECT error_cause
      FROM skill_trainer.effective_capability_evidence
      WHERE skill_id = $1 AND capability = $2 AND outcome = 'failure'
@@ -158,11 +158,11 @@ export async function refreshDiagnosis(skillId, capability, estimate, policy) {
   )
   const dominantCause = cause.rows[0]?.error_cause || null
   const recognition = capability === "CONTROLLED_RECALL"
-    ? await loadEstimate(skillId, "RECOGNITION", windowDays)
+    ? await loadEstimate(skillId, "RECOGNITION", windowDays, db)
     : null
   const weakness = deriveWeakness(capability, estimate, recognition, dominantCause, policy.config)
   if (!weakness) {
-    await query(
+    await db.query(
       `UPDATE skill_trainer.weakness_diagnoses
        SET status = 'resolved', resolved_at = NOW()
        WHERE learner_key = 'default' AND skill_id = $1
@@ -171,7 +171,7 @@ export async function refreshDiagnosis(skillId, capability, estimate, policy) {
     )
     return null
   }
-  await query(
+  await db.query(
     `UPDATE skill_trainer.weakness_diagnoses
      SET status = 'resolved', resolved_at = NOW()
      WHERE learner_key = 'default' AND skill_id = $1
@@ -184,7 +184,7 @@ export async function refreshDiagnosis(skillId, capability, estimate, policy) {
     recognitionContrast: recognition ? estimateJson(recognition, "RECOGNITION", windowDays) : null,
     evidenceSelectionVersion: EVIDENCE_SELECTION,
   }
-  const row = await query(
+  const row = await db.query(
     `INSERT INTO skill_trainer.weakness_diagnoses
        (diagnosis_id, learner_key, skill_id, target_capability, type, status,
         severity, confidence, evidence_refs, evidence_snapshot, evidence_window,
@@ -217,11 +217,11 @@ export async function refreshDiagnosis(skillId, capability, estimate, policy) {
   return row.rows[0]
 }
 
-export async function estimateAndDiagnosis(skillId, capability, policyVersion, refresh) {
-  const policy = await loadPolicy(policyVersion)
+export async function estimateAndDiagnosis(skillId, capability, policyVersion, refresh, db = { query }) {
+  const policy = await loadPolicy(policyVersion, db)
   const windowDays = policy.config.evidence_window_days
-  const estimate = await loadEstimate(skillId, capability, windowDays)
-  const diagnosis = refresh ? await refreshDiagnosis(skillId, capability, estimate, policy) : null
+  const estimate = await loadEstimate(skillId, capability, windowDays, db)
+  const diagnosis = refresh ? await refreshDiagnosis(skillId, capability, estimate, policy, db) : null
   return {
     estimate: estimateJson(estimate, capability, windowDays),
     diagnosis: diagnosisJson(diagnosis),

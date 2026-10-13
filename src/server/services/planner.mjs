@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { hashParts } from "./hash.mjs"
+import { hashParts } from "../domain/hash.mjs"
 import { estimateJson } from "./learning.mjs"
 
 const GENERATOR = "exercise-materializer-v1"

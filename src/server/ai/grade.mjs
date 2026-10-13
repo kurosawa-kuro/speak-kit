@@ -1,61 +1,11 @@
-import { aiGate, askClaude } from "./client.mjs"
-import { aiEnabled } from "./isEnabled.mjs"
+import { askClaude } from "./client.mjs"
+import { graderPrompts } from "./prompts.mjs"
+import { learnerPhrase, normalizeAnswer } from "../domain/normalize.mjs"
 
-const CONTRACTIONS = {
-  "i'm": "i am",
-  "what's": "what is",
-  "that's": "that is",
-  "it's": "it is",
-  "let's": "let us",
-  "you're": "you are",
-  "we're": "we are",
-  "they're": "they are",
-  "don't": "do not",
-  "can't": "cannot",
-  "couldn't": "could not",
-  "wouldn't": "would not",
-  "isn't": "is not",
-  "aren't": "are not",
-  "didn't": "did not",
-  "doesn't": "does not",
-  "wasn't": "was not",
-  "weren't": "were not",
-}
+export { normalizeAnswer }
 
 function text(value) {
   return typeof value === "string" ? value.trim() : ""
-}
-
-export function normalizeAnswer(input) {
-  const lowered = text(input).toLowerCase().replaceAll("’", "'")
-  const stripped = lowered.replace(/[?.!,]+$/u, "").replaceAll(/[,;:]/g, " ")
-  return stripped
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((token) => CONTRACTIONS[token] || token)
-    .join(" ")
-    .split(/\s+/)
-    .filter(Boolean)
-    .join(" ")
-}
-
-export function learnerPhrase(canonical) {
-  let phrase = ""
-  let rest = canonical || ""
-  while (rest.includes("{")) {
-    const start = rest.indexOf("{")
-    phrase += rest.slice(0, start)
-    rest = rest.slice(start + 1)
-    const end = rest.indexOf("}")
-    if (end >= 0) {
-      phrase += "..."
-      rest = rest.slice(end + 1)
-    } else {
-      phrase += "{"
-      break
-    }
-  }
-  return phrase + rest
 }
 
 export function learnerFeedback(outcomeLabel, cause, canonical, meaning, actual) {
@@ -78,23 +28,6 @@ export function learnerFeedback(outcomeLabel, cause, canonical, meaning, actual)
     return `文としては読めますが、今回の場面の言い方になっていません。今回は${named}を使う練習です。`
   }
   return `まだ意味が相手に届いていません。今回は${named}を使う練習です。回答例の形をそのまま使ってみましょう。`
-}
-
-export function graderPrompts(trainingMode, requiredDimensions, targetSkillLabel, prompt, expected, actual) {
-  const targetRequired = requiredDimensions.includes("target_skill_usage")
-  const applicableHint = targetRequired ? "" : "/not_applicable"
-  const applicable = targetRequired ? "" : "|not_applicable"
-  const system = `あなたはCore30の取り出しを観測します。Training Modeは${trainingMode}です。自然な英文かではなく、指定された言い方を会話の目的に沿って使えたかを見てください。合否は決めません。JSON以外は書かないでください。
-1. target_pattern_status: 「${targetSkillLabel}」の形を使ったか（used/not_used${applicableHint}）。別の正しい英語でも、この形でなければnot_used。
-2. meaning_match / speech_act_match: お題の意味と意図がおおむね成立するか。typo、冠詞、句読点、大文字小文字、意味を壊さない軽い文法ではnoにしない。
-3. comprehensibility: 文として読めるならclear。通信できないときだけunclear。
-4. issues: 上の軽微な点だけを空でもよい配列で。typo・冠詞・句読点はaffects_meaning=false かつ affects_target_skill=false。
-reasonは40文字以内の日本語。issue.detailは20文字以内。`
-  const user = `お題: ${prompt}
-期待する言い方: ${expected}
-学習者: ${actual}
-{"meaning_match":"yes|no","speech_act_match":"yes|no","comprehensibility":"clear|unclear","target_pattern_status":"used|not_used${applicable}","issues":[{"type":"TYPO","detail":"短い日本語","affects_meaning":false,"affects_target_skill":false}],"reason":"短い日本語","confidence":0.0}`
-  return { system, user }
 }
 
 export function reduceObservation(observation, requiredDimensions) {
@@ -201,25 +134,8 @@ function parseObservation(raw) {
   return { ...observation, issues }
 }
 
-async function notice(status, success, detail, expected) {
-  const ungraded = status !== "graded"
-  return {
-    ok: true,
-    code: "ok",
-    data: {
-      gradingStatus: status,
-      outcome: success === true ? "success" : success === false ? "failure" : null,
-      title: ungraded ? "確認できませんでした" : success ? "成功" : "要復習",
-      detail,
-      expected,
-      retry: ungraded,
-      aiEnabled: await aiEnabled(),
-    },
-    error: null,
-  }
-}
-
-export async function gradeDecision(input) {
+/** 回答を採点する。正解と一致すれば AI を使わない。一致しなければ、文脈が許すときだけ AI に観測させる。 */
+export async function gradeDecision(input, context) {
   const trainingMode = text(input?.trainingMode)
   const prompt = text(input?.prompt)
   const expected = text(input?.expectedReference)
@@ -272,13 +188,12 @@ export async function gradeDecision(input) {
     confidence: null,
     expected,
   })
-  const blocked = await aiGate()
-  if (blocked) return unavailableDecision(blocked.data.aiReason === "setting_off" ? "AI is turned off in settings" : "ANTHROPIC_API_KEY is unset")
+  if (!context?.aiAvailable) return unavailableDecision(`AI unavailable: ${context?.aiReason ?? "key_missing"}`)
   const prompts = graderPrompts(trainingMode, required, `${canonical} (${meaning})`, prompt, expected, actual)
   let observation = null
   let lastError = "grader response has no JSON object"
   for (let attempt = 0; attempt < 2 && !observation; attempt += 1) {
-    const asked = await askClaude(prompts.system, prompts.user, { maxTokens: 1200, timeoutMs: 45000, jsonSchema: OBSERVATION_SCHEMA })
+    const asked = await askClaude(context, "grade", prompts.system, prompts.user, { maxTokens: 1200, timeoutMs: 45000, jsonSchema: OBSERVATION_SCHEMA })
     if (!asked.ok) {
       lastError = asked.error?.message || asked.code
       continue
@@ -305,21 +220,4 @@ export async function gradeDecision(input) {
     confidence: observation.confidence,
     expected,
   }
-}
-
-function learnerText(value, fallback) {
-  return typeof value === "string" && /[\u3040-\u30ff\u3400-\u9fff]/u.test(value) ? value : fallback
-}
-
-export async function gradeAttempt(request) {
-  const decision = await gradeDecision(request)
-  if (!decision) {
-    return { ok: false, code: "validation_error", data: {}, error: { message: "trainingMode, prompt, and answer are required" } }
-  }
-  return notice(
-    decision.status,
-    decision.success,
-    learnerText(decision.reason, decision.success ? "今回の言い方は合っています。" : "正解を見て、もう一度この形を出してみましょう。"),
-    decision.expected,
-  )
 }

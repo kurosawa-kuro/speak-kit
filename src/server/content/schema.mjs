@@ -75,6 +75,13 @@ export function loadContent(dataDir) {
   }
 }
 
+/** 表現 1 つを YAML と同じ規則で検査する（候補の承認で使う）。間違いの文の一覧を返す。 */
+export function expressionErrors(value, label) {
+  const errors = []
+  validate([{ value, file: label, line: 1 }], [], errors)
+  return errors.map((error) => error.replace(`${label}:1 `, ""))
+}
+
 function validate(expressions, pairs, errors) {
   const keys = new Map()
   const codes = new Map()

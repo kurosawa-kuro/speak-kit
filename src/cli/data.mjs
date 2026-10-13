@@ -1,9 +1,9 @@
-import { dirname, join, relative } from "node:path"
-import { fileURLToPath } from "node:url"
-import { loadContent } from "../lib/content/schema.mjs"
+import { join, relative } from "node:path"
+import { config } from "../server/config.mjs"
+import { loadContent } from "../server/content/schema.mjs"
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..")
-const DATA_DIR = process.env.SPEAK_KIT_DATA_DIR || join(ROOT, "data")
+const ROOT = config.root
+const DATA_DIR = config.dataDir
 const [command, ...args] = process.argv.slice(2)
 
 function check() {
@@ -17,17 +17,16 @@ function check() {
 }
 
 function databaseName() {
-  const url = process.env.SPEAK_KIT_DATABASE_URL || "postgresql://kurosawa@localhost:5432/speak_kit"
-  const parsed = new URL(url)
-  return `${parsed.hostname}:${parsed.port || 5432}${parsed.pathname}`
+  const { host, port, name } = config.database
+  return `${host}:${port}/${name}`
 }
 
 async function sync(apply) {
   const content = check()
   if (!content) return 1
-  const { pool, withTransaction } = await import("../lib/db.mjs")
-  const { planSync, applySync } = await import("../lib/content/sync.mjs")
-  const { learningCounts } = await import("../lib/content/state.mjs")
+  const { pool, withTransaction } = await import("../server/db.mjs")
+  const { planSync, applySync } = await import("../server/content/sync.mjs")
+  const { learningCounts } = await import("../server/content/state.mjs")
   try {
     const plan = await planSync(pool, content)
     console.log(`反映先: ${databaseName()}`)
@@ -67,8 +66,8 @@ async function sync(apply) {
 }
 
 async function exportData() {
-  const { pool } = await import("../lib/db.mjs")
-  const { exportContent } = await import("../lib/content/export.mjs")
+  const { pool } = await import("../server/db.mjs")
+  const { exportContent } = await import("../server/content/export.mjs")
   try {
     console.log(`読み出し元: ${databaseName()}`)
     for (const { path, count } of await exportContent(pool, DATA_DIR)) {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { gradeAttempt, learnerFeedback, normalizeAnswer, reduceObservation } from "../lib/ai/grade.mjs"
+import { gradeDecision, learnerFeedback, normalizeAnswer, reduceObservation } from "../server/ai/grade.mjs"
 
 const bus = {
   trainingMode: "controlled_recall",
@@ -11,23 +11,22 @@ const bus = {
   requiredDimensions: ["communication", "semantic", "intent", "form", "policy", "target_skill_usage"],
   acceptedVariants: [],
 }
+const noAi = { aiAvailable: false, aiReason: "key_missing" }
 
 test("exact answer uses the original pass explanation", async () => {
-  delete process.env.ANTHROPIC_API_KEY
-  const result = await gradeAttempt({ ...bus, answer: "Take a bus." })
-  assert.equal(result.ok, true)
-  assert.equal(result.data.title, "成功")
-  assert.equal(result.data.outcome, "success")
-  assert.equal(result.data.detail, "意味も、今回の言い方「take a bus」（バスに乗る）も合っています。")
+  const result = await gradeDecision({ ...bus, answer: "Take a bus." }, noAi)
+  assert.equal(result.status, "graded")
+  assert.equal(result.success, true)
+  assert.equal(result.source, "deterministic")
+  assert.equal(result.reason, "意味も、今回の言い方「take a bus」（バスに乗る）も合っています。")
   assert.equal(normalizeAnswer("I'm tired."), "i am tired")
 })
 
-test("a mismatch without a key stays ungraded", async () => {
-  delete process.env.ANTHROPIC_API_KEY
-  const result = await gradeAttempt({ ...bus, answer: "I ride the bus" })
-  assert.equal(result.data.title, "確認できませんでした")
-  assert.equal(result.data.gradingStatus, "ungraded")
-  assert.equal(result.data.detail, "正解を見て、もう一度この形を出してみましょう。")
+test("a mismatch without AI stays ungraded", async () => {
+  const result = await gradeDecision({ ...bus, answer: "I ride the bus" }, noAi)
+  assert.equal(result.status, "ungraded")
+  assert.equal(result.success, null)
+  assert.match(result.reason, /key_missing/)
 })
 
 test("reducer keeps the original outcome order", () => {

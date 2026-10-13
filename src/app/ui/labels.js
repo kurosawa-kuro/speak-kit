@@ -109,6 +109,7 @@ export function observerLabel(value) {
 export function aiReasonLabel(reason) {
   if (reason === "setting_off") return "設定で AI をオフにしています。"
   if (reason === "key_missing") return "API キーが未設定です。"
+  if (reason === "limit_reached") return "AI の利用額が上限に達しました。"
   return "AI機能が現在利用できません。"
 }
 

@@ -1,8 +1,9 @@
 import { pool } from "./test-db.mjs"
 import assert from "node:assert/strict"
 import test from "node:test"
-import { dispatch } from "../lib/dispatch.mjs"
-import { reviewCandidate } from "../lib/candidates.mjs"
+import { dispatch } from "../server/dispatch.mjs"
+import { operationContext } from "../server/ai/context.mjs"
+import { reviewCandidate } from "../server/services/candidates.mjs"
 
 const originalFetch = globalThis.fetch
 const originalKey = process.env.ANTHROPIC_API_KEY
@@ -109,7 +110,7 @@ test("A10: 候補の承認で作る練習問題は、採点の版に合った採
      VALUES ('I was about to say that.', 'ちょうど言おうとしていた', 1) RETURNING id`,
   )
   const candidateId = Number(rows[0].id)
-  const approved = await reviewCandidate({
+  const approved = await reviewCandidate(await operationContext(), {
     candidate_id: candidateId,
     decision: "approved",
     reviewed_by: "test",
@@ -120,13 +121,24 @@ test("A10: 候補の承認で作る練習問題は、採点の版に合った採
     category: "OUTPUT",
   })
   assert.equal(approved.ok, true, JSON.stringify(approved))
+  assert.match(approved.data.exerciseKey, /^P1-\d{3}-CR$/)
+  const kinds = await pool.query(
+    `SELECT ed.training_mode FROM skill_trainer.exercise_definitions ed
+     JOIN skill_trainer.skill_concepts sc ON sc.id = ed.target_skill_id
+     WHERE sc.stable_key = $1 ORDER BY ed.exercise_key`,
+    [`TEST_CANDIDATE_${candidateId}`],
+  )
+  assert.deepEqual(
+    [...new Set(kinds.rows.map((row) => row.training_mode))].sort(),
+    ["controlled_recall", "recognition", "slot_replacement", "spaced_retrieval"],
+  )
   const contract = await pool.query(
     `SELECT ed.assessment_contract_key, ac.contract_key
      FROM skill_trainer.exercise_definitions ed
      JOIN skill_trainer.assessment_contracts ac
        ON ac.contract_key = ed.assessment_contract_key AND ac.version = ed.assessment_contract_version
      WHERE ed.exercise_key = $1`,
-    [`CANDIDATE-${candidateId}-CR`],
+    [approved.data.exerciseKey],
   )
   assert.equal(contract.rows[0].assessment_contract_key, "rubric:controlled-recall-v2")
 })

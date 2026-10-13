@@ -1,12 +1,18 @@
-import { createHash, randomUUID } from "node:crypto"
-import { gradeDecision, normalizeAnswer } from "./ai/grade.mjs"
-import { envelope, validationError } from "./envelope.mjs"
-import { hashParts } from "./hash.mjs"
-import { query, withTransaction } from "./db.mjs"
+import { randomUUID } from "node:crypto"
+import { gradeDecision } from "../ai/grade.mjs"
+import { normalizeAnswer } from "../domain/normalize.mjs"
+import { hashParts } from "../domain/hash.mjs"
+import { envelope, validationError } from "../http/envelope.mjs"
+import { logError } from "../http/errors.mjs"
+import { query, withTransaction } from "../db.mjs"
 import { noteBoundaryMiss, noticeForAttempt } from "./boundary.mjs"
 import { DERIVATION, estimateAndDiagnosis } from "./learning.mjs"
 
-const inFlight = new Set()
+// 1 つの回答の書き込み（回答・採点・証拠・計画の完了・診断・混同の記録）は、1 つのトランザクションに入れる。
+// AI の採点はトランザクションの外で先に済ませる。後回しにした採点は grading_claims で二重に走らせない。
+
+const SUPPORTED_DIMENSIONS = ["communication", "semantic", "intent", "form", "policy", "target_skill_usage"]
+const CLAIM_STALE = "2 minutes"
 
 function dimensionsOf(rubric) {
   const names = rubric?.required_dimensions
@@ -19,18 +25,6 @@ function variantsOf(value) {
 
 function isUuid(value) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value || "")
-}
-
-function recoveryId(attemptId) {
-  const bytes = createHash("sha1")
-    .update(Buffer.from("6ba7b8129dad11d180b400c04fd430c8", "hex"))
-    .update(`skill-trainer-attempt-recovery:${attemptId}`)
-    .digest()
-    .subarray(0, 16)
-  bytes[6] = (bytes[6] & 0x0f) | 0x50
-  bytes[8] = (bytes[8] & 0x3f) | 0x80
-  const hex = bytes.toString("hex")
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
 const CONTEXT_COLUMNS = `re.plan_item_id, ed.training_mode, re.prompt, re.expected_reference,
@@ -64,7 +58,7 @@ async function loadAttemptContext(attemptId) {
   return found.rows[0] || null
 }
 
-function decide(context, actual) {
+function decide(operation, context, actual) {
   return gradeDecision({
     trainingMode: context.training_mode,
     prompt: context.prompt,
@@ -74,7 +68,7 @@ function decide(context, actual) {
     canonicalForm: context.canonical_form,
     meaning: context.meaning,
     answer: actual,
-  })
+  }, operation)
 }
 
 function deterministicMatch(context, actual) {
@@ -83,17 +77,16 @@ function deterministicMatch(context, actual) {
     .some((candidate) => normalizeAnswer(candidate) === normalized)
 }
 
-async function completePlanItem(planItemId, keepCompletedAt = false) {
+async function completePlanItem(db, planItemId) {
   if (!planItemId) return
-  const completedAt = keepCompletedAt ? "COALESCE(completed_at, NOW())" : "NOW()"
-  await query(
+  await db.query(
     `UPDATE skill_trainer.training_plan_items
-     SET status = 'completed', completed_at = ${completedAt} WHERE plan_item_id = $1`,
+     SET status = 'completed', completed_at = COALESCE(completed_at, NOW()) WHERE plan_item_id = $1`,
     [planItemId],
   )
-  await query(
+  await db.query(
     `UPDATE skill_trainer.training_plans p
-     SET status = 'completed', completed_at = ${completedAt}
+     SET status = 'completed', completed_at = COALESCE(completed_at, NOW())
      WHERE p.plan_id = (SELECT plan_id FROM skill_trainer.training_plan_items WHERE plan_item_id = $1)
        AND NOT EXISTS (
          SELECT 1 FROM skill_trainer.training_plan_items pi
@@ -103,25 +96,27 @@ async function completePlanItem(planItemId, keepCompletedAt = false) {
   )
 }
 
-async function awaitGrade(planItemId) {
+async function setPlanItemStatus(db, planItemId, status, from) {
   if (!planItemId) return
-  await query(
-    `UPDATE skill_trainer.training_plan_items SET status = 'awaiting_grade' WHERE plan_item_id = $1`,
-    [planItemId],
+  await db.query(
+    `UPDATE skill_trainer.training_plan_items SET status = $2
+     WHERE plan_item_id = $1 AND ($3::text IS NULL OR status = $3)`,
+    [planItemId, status, from ?? null],
   )
 }
 
-async function insertObservation(attemptId, context, decision, idempotencyKey, adopt) {
+async function insertObservation(db, learnerKey, attemptId, context, decision, idempotencyKey, adopt) {
   const gradingId = randomUUID()
-  const inserted = await query(
+  const inserted = await db.query(
     `INSERT INTO skill_trainer.grading_observations
-       (grading_id, training_attempt_id, source, observer_version, idempotency_key,
+       (grading_id, learner_key, training_attempt_id, source, observer_version, idempotency_key,
         status, adopted_for_evidence, rubric_version, dimension_results, reason,
         skill_candidates, error_candidates, model_reported_confidence)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, '[]'::jsonb, $11, $12)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, '[]'::jsonb, $12, $13)
      ON CONFLICT (idempotency_key) DO NOTHING`,
     [
       gradingId,
+      learnerKey,
       attemptId,
       decision.source,
       decision.observerVersion,
@@ -138,75 +133,66 @@ async function insertObservation(attemptId, context, decision, idempotencyKey, a
   return inserted.rowCount ? gradingId : null
 }
 
-async function insertEvidence(attemptId, gradingId, context, decision, latencyMs, occurredAt) {
+async function insertEvidence(db, learnerKey, attemptId, gradingId, context, evidence) {
   const evidenceId = randomUUID()
-  const outcome = decision.success ? "success" : "failure"
-  await query(
+  await db.query(
     `INSERT INTO skill_trainer.capability_evidence
-       (evidence_id, training_attempt_id, grading_id, skill_id, capability, modality,
+       (evidence_id, learner_key, training_attempt_id, grading_id, skill_id, capability, modality,
         outcome, latency_ms, error_cause, evidence_confidence,
         derivation_version, policy_version, observed_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
     [
       evidenceId,
+      learnerKey,
       attemptId,
       gradingId,
       context.target_skill_id,
       context.target_capability,
       context.modality,
-      outcome,
-      latencyMs,
-      decision.errorCause,
-      decision.source === "deterministic" ? 100 : 80,
+      evidence.outcome,
+      evidence.latencyMs,
+      evidence.errorCause,
+      evidence.confidence,
       DERIVATION,
       context.policy_version,
-      occurredAt,
+      evidence.occurredAt,
     ],
   )
-  return { evidenceId, outcome }
+  return evidenceId
 }
 
-async function commitGrade(attemptId, context, actual, decision, latencyMs, occurredAt) {
+/** 採点を書き込む。同じ採点がすでにあれば何もしないで null を返す。 */
+async function commitGrade(db, learnerKey, attemptId, context, actual, decision, latencyMs, occurredAt) {
+  const adopt = decision.success != null
   const gradingId = await insertObservation(
+    db,
+    learnerKey,
     attemptId,
     context,
     decision,
     hashParts([attemptId, decision.source, decision.observerVersion]),
-    decision.success != null,
+    adopt,
   )
-  if (!gradingId) {
-    const existing = await existingAttemptResponse(attemptId)
-    return {
-      gradingId: existing.data.gradingId,
-      status: existing.data.gradingStatus || decision.status,
-      source: decision.source,
-      dimensions: existing.data.dimensions,
-      reason: existing.data.reason || "",
-      evidenceId: existing.data.evidenceId,
-      outcome: existing.data.outcome,
-    }
-  }
+  if (!gradingId) return null
   let evidenceId = null
   let outcome = null
-  if (decision.success != null) {
-    const derived = await insertEvidence(attemptId, gradingId, context, decision, latencyMs, occurredAt)
-    evidenceId = derived.evidenceId
-    outcome = derived.outcome
-    await completePlanItem(context.plan_item_id)
-    await estimateAndDiagnosis(context.target_skill_id, context.target_capability, context.policy_version, true)
+  if (adopt) {
+    outcome = decision.success ? "success" : "failure"
+    evidenceId = await insertEvidence(db, learnerKey, attemptId, gradingId, context, {
+      outcome,
+      latencyMs,
+      errorCause: decision.errorCause,
+      confidence: decision.source === "deterministic" ? 100 : 80,
+      occurredAt,
+    })
+    await completePlanItem(db, context.plan_item_id)
   } else {
-    await awaitGrade(context.plan_item_id)
+    await setPlanItemStatus(db, context.plan_item_id, "awaiting_grade")
   }
-  await noteBoundaryMiss(attemptId, context.canonical_form, context.expected_reference, actual)
-  return {
-    gradingId,
-    status: decision.status,
-    source: decision.source,
-    dimensions: decision.dimensions,
-    reason: decision.reason,
-    evidenceId,
-    outcome,
-  }
+  await noteBoundaryMiss(attemptId, context.canonical_form, context.expected_reference, actual, db)
+  await db.query("DELETE FROM skill_trainer.grading_claims WHERE attempt_id = $1", [attemptId])
+  const learned = await estimateAndDiagnosis(context.target_skill_id, context.target_capability, context.policy_version, true, db)
+  return { gradingId, status: decision.status, source: decision.source, dimensions: decision.dimensions, reason: decision.reason, evidenceId, outcome, learned }
 }
 
 async function existingAttemptResponse(attemptId) {
@@ -261,39 +247,48 @@ function pendingEnvelope(attemptId, exerciseInstanceId, actual) {
   }, null)
 }
 
-async function gradeMissingAttempt(attemptId) {
-  const context = await loadAttemptContext(attemptId)
-  if (!context) return
-  const decision = await decide(context, context.actual)
-  await commitGrade(attemptId, context, context.actual, decision, context.latency_ms, context.occurred_at)
-}
-
-function ensureDeferredGrade(attemptId) {
-  if (inFlight.has(attemptId)) return
-  inFlight.add(attemptId)
-  gradeMissingAttempt(attemptId)
-    .catch((error) => console.warn(`deferred grade failed for ${attemptId}: ${error.message}`))
-    .finally(() => inFlight.delete(attemptId))
-}
-
-async function repairAttemptSideEffects(attemptId) {
-  const found = await query(
-    `SELECT re.plan_item_id, ed.target_skill_id, ed.target_capability, re.policy_version
-     FROM skill_trainer.training_attempts a
-     JOIN skill_trainer.rendered_exercises re ON re.exercise_instance_id = a.exercise_instance_id
-     JOIN skill_trainer.exercise_definitions ed
-       ON ed.exercise_key = re.exercise_key AND ed.version = re.exercise_version
-     WHERE a.attempt_id = $1
-       AND EXISTS (
-         SELECT 1 FROM skill_trainer.effective_capability_evidence ce
-         WHERE ce.training_attempt_id = a.attempt_id
-       )`,
+/** 後回しの採点を引き受ける。ほかが進めている間（2 分以内）は false。 */
+async function claimGrading(db, attemptId) {
+  const claimed = await db.query(
+    `INSERT INTO skill_trainer.grading_claims (attempt_id) VALUES ($1)
+     ON CONFLICT (attempt_id) DO UPDATE SET claimed_at = NOW()
+       WHERE skill_trainer.grading_claims.claimed_at < NOW() - interval '${CLAIM_STALE}'
+     RETURNING attempt_id`,
     [attemptId],
   )
-  const row = found.rows[0]
-  if (!row) return
-  await completePlanItem(row.plan_item_id, true)
-  await estimateAndDiagnosis(row.target_skill_id, row.target_capability, row.policy_version, true)
+  return claimed.rowCount > 0
+}
+
+async function gradeDeferred(operation, attemptId) {
+  const context = await loadAttemptContext(attemptId)
+  if (!context) return
+  const decision = await decide(operation, context, context.actual)
+  await withTransaction(async (client) => {
+    await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [attemptId])
+    const graded = await client.query(
+      "SELECT 1 FROM skill_trainer.grading_observations WHERE training_attempt_id = $1 LIMIT 1",
+      [attemptId],
+    )
+    if (graded.rowCount) {
+      await client.query("DELETE FROM skill_trainer.grading_claims WHERE attempt_id = $1", [attemptId])
+      return
+    }
+    await commitGrade(client, operation.learnerKey, attemptId, context, context.actual, decision, context.latency_ms, context.occurred_at)
+  })
+}
+
+function deferGrading(operation, attemptId) {
+  operation.defer(() => gradeDeferred(operation, attemptId)
+    .catch((error) => logError(`deferred grade ${attemptId}`, error)))
+}
+
+async function replayExisting(operation, attemptId) {
+  const response = await existingAttemptResponse(attemptId)
+  if (response.data.gradingId == null) {
+    if (await claimGrading({ query }, attemptId)) deferGrading(operation, attemptId)
+    return pendingEnvelope(attemptId, response.data.exerciseInstanceId, response.data.actual)
+  }
+  return response
 }
 
 function identityMatches(existing, exerciseInstanceId, actual, latencyMs, sessionId, occurredAt) {
@@ -317,78 +312,64 @@ const CONFLICT = () => envelope(false, "idempotency_conflict", {}, {
   message: "attempt_id was already used with different immutable input",
 })
 
-async function replayExisting(attemptId, deferMissing) {
-  const response = await existingAttemptResponse(attemptId)
-  if (response.data.gradingId == null) {
-    if (deferMissing) {
-      ensureDeferredGrade(attemptId)
-      return pendingEnvelope(attemptId, response.data.exerciseInstanceId, response.data.actual)
-    }
-    await gradeMissingAttempt(attemptId)
-    return existingAttemptResponse(attemptId)
-  }
-  if (response.data.gradingStatus === "graded" && response.data.evidenceId == null) {
-    return regradeAttempt({ regrade_id: recoveryId(attemptId), attempt_id: attemptId })
-  }
-  await repairAttemptSideEffects(attemptId)
-  return response
+async function insertAttempt(db, learnerKey, attempt, context) {
+  const inserted = await db.query(
+    `INSERT INTO skill_trainer.training_attempts
+       (attempt_id, learner_key, plan_item_id, exercise_id, exercise_instance_id, actual, input_modality,
+        latency_ms, session_id, occurred_at)
+     VALUES ($1, $2, $3, $4, $4, $5, 'text', $6, $7, $8)
+     ON CONFLICT (attempt_id) DO NOTHING`,
+    [attempt.attemptId, learnerKey, context.plan_item_id, attempt.exerciseInstanceId, attempt.actual, attempt.latencyMs, attempt.sessionId, attempt.occurredAt],
+  )
+  if (inserted.rowCount) await setPlanItemStatus(db, context.plan_item_id, "in_progress", "planned")
+  return inserted.rowCount > 0
 }
 
-export async function submitFreeText(request) {
-  const attemptId = request.attempt_id
-  const exerciseInstanceId = request.exercise_instance_id
-  const actual = request.answer_text.trim()
+export async function submitFreeText(operation, request) {
   const latencyMs = Number.isInteger(request.latency_ms) ? request.latency_ms : null
   if (latencyMs != null && (latencyMs < 0 || latencyMs > 2147483647)) {
     return validationError("latency_ms must be between 0 and 2147483647")
   }
   const parsedAt = typeof request.occurred_at === "string" ? new Date(request.occurred_at) : null
   const requestedAt = parsedAt && !Number.isNaN(parsedAt.getTime()) ? parsedAt : null
-  const occurredAt = requestedAt || new Date()
-  const sessionId = isUuid(request.session_id) ? request.session_id.toLowerCase() : null
-
-  const existing = await loadIdentity(attemptId)
-  if (existing) {
-    if (!identityMatches(existing, exerciseInstanceId, actual, latencyMs, sessionId, requestedAt)) return CONFLICT()
-    return replayExisting(attemptId, false)
+  const attempt = {
+    attemptId: request.attempt_id,
+    exerciseInstanceId: request.exercise_instance_id,
+    actual: request.answer_text.trim(),
+    latencyMs,
+    sessionId: isUuid(request.session_id) ? request.session_id.toLowerCase() : null,
+    occurredAt: requestedAt || new Date(),
   }
-  const context = await loadContext(exerciseInstanceId)
+  const replayIfSame = async () => {
+    const existing = await loadIdentity(attempt.attemptId)
+    if (!identityMatches(existing, attempt.exerciseInstanceId, attempt.actual, latencyMs, attempt.sessionId, requestedAt)) return CONFLICT()
+    return replayExisting(operation, attempt.attemptId)
+  }
+  if (await loadIdentity(attempt.attemptId)) return replayIfSame()
+  const context = await loadContext(attempt.exerciseInstanceId)
   if (!context) return envelope(false, "not_found", {}, { message: "rendered exercise not found" })
 
-  const inserted = await query(
-    `INSERT INTO skill_trainer.training_attempts
-       (attempt_id, plan_item_id, exercise_id, exercise_instance_id, actual, input_modality,
-        latency_ms, session_id, occurred_at)
-     VALUES ($1, $2, $3, $3, $4, 'text', $5, $6, $7)
-     ON CONFLICT (attempt_id) DO NOTHING`,
-    [attemptId, context.plan_item_id, exerciseInstanceId, actual, latencyMs, sessionId, occurredAt],
-  )
-  if (!inserted.rowCount) {
-    const raced = await loadIdentity(attemptId)
-    if (!identityMatches(raced, exerciseInstanceId, actual, latencyMs, sessionId, requestedAt)) return CONFLICT()
-    return replayExisting(attemptId, true)
+  if (request.defer_unknown === true && !deterministicMatch(context, attempt.actual)) {
+    const accepted = await withTransaction(async (client) => {
+      if (!(await insertAttempt(client, operation.learnerKey, attempt, context))) return false
+      await setPlanItemStatus(client, context.plan_item_id, "awaiting_grade")
+      await claimGrading(client, attempt.attemptId)
+      return true
+    })
+    if (!accepted) return replayIfSame()
+    deferGrading(operation, attempt.attemptId)
+    return pendingEnvelope(attempt.attemptId, attempt.exerciseInstanceId, attempt.actual)
   }
 
-  if (context.plan_item_id) {
-    await query(
-      `UPDATE skill_trainer.training_plan_items SET status = 'in_progress'
-       WHERE plan_item_id = $1 AND status = 'planned'`,
-      [context.plan_item_id],
-    )
-  }
-  if (request.defer_unknown === true && !deterministicMatch(context, actual)) {
-    await awaitGrade(context.plan_item_id)
-    ensureDeferredGrade(attemptId)
-    return pendingEnvelope(attemptId, exerciseInstanceId, actual)
-  }
-
-  const decision = await decide(context, actual)
-  const committed = await commitGrade(attemptId, context, actual, decision, latencyMs, occurredAt)
-  const confusion = await noticeForAttempt(attemptId)
-  const learned = await estimateAndDiagnosis(context.target_skill_id, context.target_capability, context.policy_version, true)
+  const decision = await decide(operation, context, attempt.actual)
+  const committed = await withTransaction(async (client) => {
+    if (!(await insertAttempt(client, operation.learnerKey, attempt, context))) return null
+    return commitGrade(client, operation.learnerKey, attempt.attemptId, context, attempt.actual, decision, latencyMs, attempt.occurredAt)
+  })
+  if (!committed) return replayIfSame()
   return envelope(true, "ok", {
-    attemptId,
-    exerciseInstanceId,
+    attemptId: attempt.attemptId,
+    exerciseInstanceId: attempt.exerciseInstanceId,
     gradingId: committed.gradingId,
     gradingStatus: committed.status,
     graderSource: committed.source,
@@ -397,13 +378,11 @@ export async function submitFreeText(request) {
     evidenceId: committed.evidenceId,
     outcome: committed.outcome,
     expectedReference: context.expected_reference,
-    confusion,
-    estimate: learned.estimate,
-    diagnosis: learned.diagnosis,
+    confusion: await noticeForAttempt(attempt.attemptId),
+    estimate: committed.learned.estimate,
+    diagnosis: committed.learned.diagnosis,
   }, null)
 }
-
-const SUPPORTED_DIMENSIONS = ["communication", "semantic", "intent", "form", "policy", "target_skill_usage"]
 
 function requiredDimensions(rubric) {
   const names = rubric?.required_dimensions
@@ -430,7 +409,7 @@ function sameJson(left, right) {
   return JSON.stringify(canonical(left)) === JSON.stringify(canonical(right))
 }
 
-export async function recordHumanObservation(request) {
+export async function recordHumanObservation(operation, request) {
   const observationId = request.observation_id.trim().toLowerCase()
   const attemptId = request.attempt_id.trim().toLowerCase()
   const dimensions = request.dimensions
@@ -484,45 +463,23 @@ export async function recordHumanObservation(request) {
     const gradingId = randomUUID()
     await client.query(
       `INSERT INTO skill_trainer.grading_observations
-         (grading_id, training_attempt_id, source, observer_version, idempotency_key,
+         (grading_id, learner_key, training_attempt_id, source, observer_version, idempotency_key,
           status, adopted_for_evidence, rubric_version, dimension_results, reason,
           skill_candidates, error_candidates, model_reported_confidence)
-       VALUES ($1, $2, 'human', $3, $4, 'graded', TRUE, $5, $6, $7,
-               '[]'::jsonb, $8, NULL)`,
-      [gradingId, attemptId, observerVersion, gradingKey, rubricVersion, JSON.stringify(dimensions), reason, JSON.stringify(errorCandidates)],
+       VALUES ($1, $2, $3, 'human', $4, $5, 'graded', TRUE, $6, $7, $8,
+               '[]'::jsonb, $9, NULL)`,
+      [gradingId, operation.learnerKey, attemptId, observerVersion, gradingKey, rubricVersion, JSON.stringify(dimensions), reason, JSON.stringify(errorCandidates)],
     )
-    const evidenceId = randomUUID()
-    await client.query(
-      `INSERT INTO skill_trainer.capability_evidence
-         (evidence_id, training_attempt_id, grading_id, skill_id, capability, modality,
-          outcome, latency_ms, error_cause, evidence_confidence,
-          derivation_version, policy_version, observed_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 100, $10, $11, $12)`,
-      [
-        evidenceId, attemptId, gradingId, context.target_skill_id, context.target_capability,
-        context.modality, outcome, context.latency_ms, errorCause, DERIVATION,
-        context.policy_version, context.occurred_at,
-      ],
-    )
-    if (context.plan_item_id) {
-      await client.query(
-        `UPDATE skill_trainer.training_plan_items
-         SET status = 'completed', completed_at = COALESCE(completed_at, NOW())
-         WHERE plan_item_id = $1`,
-        [context.plan_item_id],
-      )
-      await client.query(
-        `UPDATE skill_trainer.training_plans p
-         SET status = 'completed', completed_at = COALESCE(completed_at, NOW())
-         WHERE p.plan_id = (SELECT plan_id FROM skill_trainer.training_plan_items WHERE plan_item_id = $1)
-           AND NOT EXISTS (
-             SELECT 1 FROM skill_trainer.training_plan_items pi
-             WHERE pi.plan_id = p.plan_id AND pi.status <> 'completed'
-           )`,
-        [context.plan_item_id],
-      )
-    }
-    return { gradingId, evidenceId }
+    const evidenceId = await insertEvidence(client, operation.learnerKey, attemptId, gradingId, context, {
+      outcome,
+      latencyMs: context.latency_ms,
+      errorCause,
+      confidence: 100,
+      occurredAt: context.occurred_at,
+    })
+    await completePlanItem(client, context.plan_item_id)
+    const learned = await estimateAndDiagnosis(context.target_skill_id, context.target_capability, context.policy_version, true, client)
+    return { gradingId, evidenceId, learned }
   })
   if (stored.conflict) {
     return envelope(false, "idempotency_conflict", {}, { message: "observation_id was already used with different immutable input" })
@@ -536,7 +493,6 @@ export async function recordHumanObservation(request) {
       adoptedForEvidence: stored.replay.adopted_for_evidence,
     }, null)
   }
-  const learned = await estimateAndDiagnosis(context.target_skill_id, context.target_capability, context.policy_version, true)
   return envelope(true, "ok", {
     observationId,
     attemptId,
@@ -545,8 +501,8 @@ export async function recordHumanObservation(request) {
     outcome,
     adoptedForEvidence: true,
     evidenceId: stored.evidenceId,
-    estimate: learned.estimate,
-    diagnosis: learned.diagnosis,
+    estimate: stored.learned.estimate,
+    diagnosis: stored.learned.diagnosis,
   }, null)
 }
 
@@ -628,7 +584,7 @@ async function regradeReplayEnvelope(context, regradeId, attemptId, prior) {
   }, null)
 }
 
-export async function regradeAttempt(request) {
+export async function regradeAttempt(operation, request) {
   const context = await loadAttemptContext(request.attempt_id)
   if (!context) return envelope(false, "not_found", {}, { message: "attempt not found" })
   const attemptId = request.attempt_id
@@ -638,65 +594,28 @@ export async function regradeAttempt(request) {
   const prior = await regradeReplay({ query }, gradingKey)
   if (prior) return regradeReplayEnvelope(context, regradeId, attemptId, prior)
 
-  const decision = await decide(context, context.actual)
+  const decision = await decide(operation, context, context.actual)
   const adopt = decision.success != null
   const result = await withTransaction(async (client) => {
     await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [attemptId])
     const raced = await regradeReplay(client, gradingKey)
     if (raced) return { raced }
-    const gradingId = randomUUID()
-    await client.query(
-      `INSERT INTO skill_trainer.grading_observations
-         (grading_id, training_attempt_id, source, observer_version, idempotency_key,
-          status, adopted_for_evidence, rubric_version, dimension_results, reason,
-          skill_candidates, error_candidates, model_reported_confidence)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, '[]'::jsonb, $11, $12)`,
-      [
-        gradingId,
-        attemptId,
-        decision.source,
-        decision.observerVersion,
-        gradingKey,
-        decision.status,
-        adopt,
-        context.rubric_snapshot?.rubric_version || "unknown",
-        JSON.stringify(decision.dimensions || {}),
-        decision.reason,
-        JSON.stringify(decision.errorCause ? [decision.errorCause] : []),
-        decision.confidence,
-      ],
-    )
+    const gradingId = await insertObservation(client, operation.learnerKey, attemptId, context, decision, gradingKey, adopt)
     let evidenceId = null
     if (adopt) {
-      evidenceId = randomUUID()
-      await client.query(
-        `INSERT INTO skill_trainer.capability_evidence
-           (evidence_id, training_attempt_id, grading_id, skill_id, capability, modality,
-            outcome, latency_ms, error_cause, evidence_confidence,
-            derivation_version, policy_version, observed_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-        [
-          evidenceId,
-          attemptId,
-          gradingId,
-          context.target_skill_id,
-          context.target_capability,
-          context.modality,
-          decision.success ? "success" : "failure",
-          context.latency_ms,
-          decision.errorCause,
-          decision.source === "deterministic" ? 100 : 80,
-          DERIVATION,
-          context.policy_version,
-          context.occurred_at,
-        ],
-      )
+      evidenceId = await insertEvidence(client, operation.learnerKey, attemptId, gradingId, context, {
+        outcome: decision.success ? "success" : "failure",
+        latencyMs: context.latency_ms,
+        errorCause: decision.errorCause,
+        confidence: decision.source === "deterministic" ? 100 : 80,
+        occurredAt: context.occurred_at,
+      })
+      await completePlanItem(client, context.plan_item_id)
     }
-    return { gradingId, evidenceId }
+    const learned = await estimateAndDiagnosis(context.target_skill_id, context.target_capability, context.policy_version, adopt, client)
+    return { gradingId, evidenceId, learned }
   })
   if (result.raced) return regradeReplayEnvelope(context, regradeId, attemptId, result.raced)
-  if (adopt) await completePlanItem(context.plan_item_id)
-  const learned = await estimateAndDiagnosis(context.target_skill_id, context.target_capability, context.policy_version, adopt)
   return envelope(true, "ok", {
     regradeId,
     attemptId,
@@ -710,7 +629,7 @@ export async function regradeAttempt(request) {
     evidenceId: result.evidenceId,
     outcome: adopt ? (decision.success ? "success" : "failure") : null,
     expectedReference: context.expected_reference,
-    estimate: learned.estimate,
-    diagnosis: learned.diagnosis,
+    estimate: result.learned.estimate,
+    diagnosis: result.learned.diagnosis,
   }, null)
 }

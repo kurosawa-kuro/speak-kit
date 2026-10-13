@@ -1,10 +1,9 @@
 import { pool } from "./test-db.mjs"
 import assert from "node:assert/strict"
 import test from "node:test"
-import { dispatch } from "../lib/dispatch.mjs"
-import { aiStatus } from "../lib/ai/isEnabled.mjs"
-import { feedback, scenario, talk } from "../lib/ai/features.mjs"
-import { getSettings, saveSettings } from "../lib/settings.mjs"
+import { dispatch } from "../server/dispatch.mjs"
+import { operationContext } from "../server/ai/context.mjs"
+import { getSettings, saveSettings } from "../server/services/settings.mjs"
 
 const originalFetch = globalThis.fetch
 const originalKey = process.env.ANTHROPIC_API_KEY
@@ -27,6 +26,7 @@ test.after(async () => {
   if (originalKey === undefined) delete process.env.ANTHROPIC_API_KEY
   else process.env.ANTHROPIC_API_KEY = originalKey
   if (original !== null) await saveSettings({ aiEnabled: original })
+  await pool.query("DELETE FROM skill_trainer.ai_usage WHERE feature = 'test'")
   await pool.end()
 })
 
@@ -58,17 +58,19 @@ async function exerciseAiPaths() {
   assert.equal(ended.ok, true, JSON.stringify(ended))
   const draft = await dispatch("skill_trainer_register_confusion_pair_v2", { label_a: "lend", label_b: "borrow" })
   assert.equal(draft.ok, false)
-  await talk({ scenario: "teacher", message: "Hello" })
-  await feedback({ text: "I am tired." })
-  await scenario()
+  assert.equal(draft.code, "ai_unavailable")
   return { practice, started, sent, draft }
+}
+
+async function status() {
+  const context = await operationContext()
+  return { aiAvailable: context.aiAvailable, keyConfigured: context.keyConfigured, aiReason: context.aiReason }
 }
 
 test("setting off: no Anthropic request even with a key", async () => {
   process.env.ANTHROPIC_API_KEY = "sk-test-not-a-real-key"
   await saveSettings({ aiEnabled: false })
-  const status = await aiStatus()
-  assert.deepEqual(status, { aiEnabled: false, keyConfigured: true, setting: false, reason: "setting_off" })
+  assert.deepEqual(await status(), { aiAvailable: false, keyConfigured: true, aiReason: "setting_off" })
   anthropicCalls = 0
   const { practice, started, sent, draft } = await exerciseAiPaths()
   assert.equal(anthropicCalls, 0)
@@ -76,27 +78,60 @@ test("setting off: no Anthropic request even with a key", async () => {
   assert.equal(practice.data.aiReason, "setting_off")
   assert.equal(started.data.aiReason, "setting_off")
   assert.equal(sent.data.aiAvailable, false)
-  assert.match(draft.error.message, /設定で AI をオフにしています/)
+  assert.equal(draft.data.aiReason, "setting_off")
 })
 
 test("setting on without a key: AI stays unavailable", async () => {
   delete process.env.ANTHROPIC_API_KEY
   await saveSettings({ aiEnabled: true })
-  assert.deepEqual(await aiStatus(), { aiEnabled: false, keyConfigured: false, setting: true, reason: "key_missing" })
+  assert.deepEqual(await status(), { aiAvailable: false, keyConfigured: false, aiReason: "key_missing" })
   anthropicCalls = 0
   const { practice, draft } = await exerciseAiPaths()
   assert.equal(anthropicCalls, 0)
   assert.equal(practice.data.aiReason, "key_missing")
-  assert.match(draft.error.message, /API キーが未設定です/)
+  assert.equal(draft.data.aiReason, "key_missing")
 })
 
 test("setting on with a key: requests go to Anthropic again", async () => {
   process.env.ANTHROPIC_API_KEY = "sk-test-not-a-real-key"
   await saveSettings({ aiEnabled: true })
-  assert.equal((await aiStatus()).aiEnabled, true)
+  assert.equal((await status()).aiAvailable, true)
   anthropicCalls = 0
-  await feedback({ text: "I am tired." })
-  assert.equal(anthropicCalls, 1)
+  await dispatch("skill_trainer_register_confusion_pair_v2", { label_a: "rent", label_b: "hire" })
+  assert.ok(anthropicCalls >= 1)
+})
+
+test("usage over the daily limit stops AI before any request", async () => {
+  process.env.ANTHROPIC_API_KEY = "sk-test-not-a-real-key"
+  await saveSettings({ aiEnabled: true })
+  await pool.query(
+    `INSERT INTO skill_trainer.ai_usage (feature, model, input_tokens, output_tokens, cost_usd)
+     VALUES ('test', 'claude-sonnet-5', 500000, 100000, 2.0)`,
+  )
+  try {
+    const context = await operationContext()
+    assert.equal(context.aiReason, "limit_reached")
+    assert.ok(context.usage.dayUsd >= 2)
+    anthropicCalls = 0
+    const { practice, draft } = await exerciseAiPaths()
+    assert.equal(anthropicCalls, 0)
+    assert.equal(practice.data.aiReason, "limit_reached")
+    assert.equal(draft.data.aiReason, "limit_reached")
+    const view = await dispatch("skill_trainer_get_settings_v1", {})
+    assert.equal(view.data.ai.aiReason, "limit_reached")
+    assert.equal(view.data.startup.ai.dailyLimitUsd, 2)
+  } finally {
+    await pool.query("DELETE FROM skill_trainer.ai_usage WHERE feature = 'test'")
+  }
+})
+
+test("settings RPCs save the switch and reject a non-boolean", async () => {
+  const bad = await dispatch("skill_trainer_save_settings_v1", { ai_enabled: "yes" })
+  assert.equal(bad.code, "validation_error")
+  const saved = await dispatch("skill_trainer_save_settings_v1", { ai_enabled: false })
+  assert.equal(saved.data.settings.aiEnabled, false)
+  assert.equal(saved.data.ai.aiReason, "setting_off")
+  assert.equal(JSON.stringify(saved).includes("postgresql://"), false)
 })
 
 test("choice path works with the setting off and with no key", async () => {

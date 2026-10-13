@@ -1,47 +1,49 @@
-import { AI_REASON_MESSAGES, aiStatus, hasAnthropicKey } from "./isEnabled.mjs"
+import { anthropicKey, config } from "../config.mjs"
+import { logError } from "../http/errors.mjs"
+import { recordUsage } from "./usage.mjs"
 
-const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
-const TIMEOUT_MS = 20000
-
-export function unavailable(reason = "key_missing") {
+export function unavailable(reason) {
   return {
     ok: false,
     code: "ai_unavailable",
-    data: { aiEnabled: false, aiReason: reason },
-    error: { message: AI_REASON_MESSAGES[reason] },
+    data: { aiAvailable: false, aiReason: reason },
+    error: { message: `AI unavailable: ${reason}` },
   }
 }
 
-/** AI を使えないときは unavailable() を、使えるときは null を返す。 */
-export async function aiGate() {
-  if (!hasAnthropicKey()) return unavailable("key_missing")
-  const status = await aiStatus()
-  return status.aiEnabled ? null : unavailable(status.reason)
-}
-
-export async function askClaude(system, user, options = {}) {
-  const blocked = await aiGate()
-  if (blocked) return blocked
+/**
+ * AI の窓口。送るかどうかは、操作の文脈（operationContext）だけで決める。
+ * 応答が返ったら、使ったトークン数を ai_usage に残す。
+ */
+export async function askClaude(context, feature, system, user, options = {}) {
+  if (!context?.aiAvailable) return unavailable(context?.aiReason ?? "key_missing")
+  const key = anthropicKey()
+  if (!key) return unavailable("key_missing")
+  const model = config.ai.model
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), options.timeoutMs || TIMEOUT_MS)
+  const timer = setTimeout(() => controller.abort(), options.timeoutMs || config.ai.timeoutMs)
   try {
-    const response = await fetch(ANTHROPIC_URL, {
+    const response = await fetch(config.ai.url, {
       method: "POST",
       signal: controller.signal,
       headers: {
         "content-type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "x-api-key": key,
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5",
-        max_tokens: options.maxTokens || 600,
+        model,
+        max_tokens: options.maxTokens || config.ai.maxTokens,
         system,
         messages: [{ role: "user", content: user }],
         ...(options.jsonSchema ? { output_config: { format: { type: "json_schema", schema: options.jsonSchema } } } : {}),
       }),
     })
     const body = await response.json().catch(() => ({}))
+    if (body?.usage) {
+      await recordUsage(feature, body.model || model, body.usage)
+        .catch((error) => logError(`ai usage (${feature})`, error))
+    }
     if (!response.ok) {
       const code = response.status === 401 ? "unauthorized" : response.status === 429 ? "rate_limited" : "ai_error"
       return { ok: false, code, data: {}, error: { message: body?.error?.message || `Anthropic ${response.status}` } }
